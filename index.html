@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Capital - Live Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background: #030303; color: #fff; padding: 1.5rem; padding-bottom: 3rem; }
+        header { background: #0c0c0c; border-bottom: 2px solid #b38728; padding: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-radius: 4px; flex-wrap: wrap; gap: 0.5rem; }
+        .logo { font-weight: 900; font-size: 1.3rem; color: #e5c158; }
+        .toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .btn { background: #141414; border: 1px solid #333; color: #ccc; font-size: 0.7rem; font-weight: 700; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
+        .btn:disabled { opacity: 0.35; cursor: default; }
+        .btn-gold { border: 1px solid #b38728; color: #e5c158; }
+        .cloud-status { font-size: 0.65rem; font-weight: bold; padding: 0.35rem; border-radius: 4px; background: #111; border: 1px solid #222; white-space: nowrap; }
+        .tc-box { background: #111; border: 1px solid #2a2a2a; padding: 0.4rem; border-radius: 6px; font-size: 0.7rem; color: #888; }
+        .tc-box input { background: transparent; border: none; color: #e5c158; font-weight: 800; font-size: 1rem; width: 60px; text-align: right; outline: none; }
+        .grid-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .card { padding: 1.25rem; border-radius: 6px; background: #0c0c0c; border: 1px solid #222; min-height: 110px; }
+        .card-main { border-left: 4px solid #b38728; background: linear-gradient(135deg, #1a150b, #0c0a05); color: #e5c158; }
+        .card-title { font-size: 0.65rem; font-weight: 700; color: #888; text-transform: uppercase; }
+        .card-val { font-size: 1.65rem; font-weight: 900; margin-top: 0.75rem; font-family: monospace; }
+        .liq-box { background: #0c0c0c; border: 1px solid #222; border-radius: 6px; padding: 1.25rem; margin-bottom: 2rem; }
+        .liq-box h3 { font-size: 0.75rem; color: #b38728; margin-bottom: 1rem; text-transform: uppercase; }
+        .bar-wrapper { margin-bottom: 0.85rem; }
+        .bar-info { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-bottom: 0.3rem; }
+        .bar-bg { background: #161616; height: 5px; border-radius: 2px; width: 100%; border: 1px solid #222; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.4s; background: linear-gradient(90deg, #b38728, #fcf6ba); }
+        .grid-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; }
+        .table-box { background: #0c0c0c; border: 1px solid #222; border-radius: 6px; padding: 1.25rem; }
+        .table-hdr { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding-bottom: 0.75rem; margin-bottom: 1rem; font-weight: 900; }
+        .border-gold { border-top: 3px solid #b38728; }
+        .border-silver { border-top: 3px solid #ccc; }
+        .account-rows { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+        .row-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 0.6rem; border-radius: 4px; border: 1px solid #1c1c1c; gap: 0.5rem; }
+        .meta-container { display: flex; flex-direction: column; flex-grow: 1; }
+        .input-inline { background: transparent; border: none; color: #fff; font-size: 0.8rem; font-weight: 700; outline: none; width: 100%; max-width: 140px; }
+        .meta-details { font-size: 0.65rem; color: #666; display: flex; gap: 0.3rem; align-items: center; margin-top: 0.2rem; }
+        .input-sub { font-size: 0.65rem; color: #888; background: transparent; border: none; outline: none; width: 65px; }
+        .select-liq { background: #161616; color: #888; font-size: 0.6rem; border: 1px solid #222; padding: 0.1rem; outline: none; }
+        .share-badge { font-family: monospace; color: #b38728; font-weight: bold; }
+        .row-actions { display: flex; gap: 0.2rem; }
+        .btn-mini { background: transparent; border: none; color: #444; font-size: 0.65rem; cursor: pointer; font-weight: bold; }
+        .btn-mini:hover { color: #fff; }
+        .input-box { background: #060606; border: 1px solid #333; border-radius: 4px; padding: 0.35rem; display: flex; width: 110px; }
+        .input-box span { font-size: 0.75rem; color: #444; margin-right: 0.15rem; }
+        .input-box input { background: transparent; border: none; width: 100%; text-align: right; color: #fff; font-weight: 700; outline: none; font-family: monospace; }
+        .btn-add { width: 100%; background: #111; border: 1px dashed #333; color: #888; font-size: 0.7rem; font-weight: bold; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
+        .btn-add:hover { border-color: #b38728; color: #e5c158; }
+
+        /* Setup modal */
+        #setup-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; align-items: center; justify-content: center; }
+        #setup-modal.visible { display: flex; }
+        .modal-box { background: #111; border: 1px solid #b38728; border-radius: 8px; padding: 2rem; max-width: 480px; width: 90%; }
+        .modal-box h2 { color: #e5c158; font-size: 1rem; margin-bottom: 1rem; }
+        .modal-box p { font-size: 0.75rem; color: #aaa; margin-bottom: 0.75rem; line-height: 1.6; }
+        .modal-box ol { font-size: 0.75rem; color: #aaa; margin-left: 1.2rem; margin-bottom: 1rem; line-height: 2; }
+        .modal-box a { color: #e5c158; }
+        .modal-input { width: 100%; background: #060606; border: 1px solid #333; border-radius: 4px; color: #fff; padding: 0.5rem; font-size: 0.8rem; margin-bottom: 0.5rem; outline: none; }
+        .modal-input:focus { border-color: #b38728; }
+        .btn-modal-save { background: #b38728; color: #000; font-weight: 900; font-size: 0.8rem; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; width: 100%; }
+        .btn-modal-save:hover { background: #e5c158; }
+
+        @media print {
+            header, .toolbar, .input-box, .tc-box, .btn-add, .row-actions, #setup-modal { display: none !important; }
+            .card, .table-box, .row-item { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modal de configuración inicial -->
+    <div id="setup-modal">
+        <div class="modal-box">
+            <h2>⚙️ Configurar Sincronización en la Nube</h2>
+            <p>Para que el dashboard se sincronice entre tu Mac y tu iPhone necesitás crear un <strong style="color:#e5c158">bin gratuito en JSONBin.io</strong>. Solo hacés esto una vez.</p>
+            <ol>
+                <li>Entrá a <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> y creá una cuenta gratis</li>
+                <li>Creá un nuevo bin con el contenido <code style="color:#e5c158">{}</code></li>
+                <li>Copiá el <strong>BIN ID</strong> (ej: <code>6650a3...</code>)</li>
+                <li>Creá una <strong>API KEY</strong> desde tu perfil</li>
+                <li>Pegá ambos datos abajo 👇</li>
+            </ol>
+            <input class="modal-input" id="input-bin-id" type="text" placeholder="BIN ID  (ej: 6650a3c1ad19ca34f87a1234)" />
+            <input class="modal-input" id="input-api-key" type="text" placeholder="API KEY  (ej: $2a$10$...)" />
+            <button class="btn-modal-save" onclick="guardarConfigNube()">💾 Guardar y Conectar</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">PC CAPITAL</div>
+        <div class="toolbar">
+            <button id="btn-undo" class="btn" onclick="ejecutarUndo()" disabled>↩ Undo</button>
+            <button id="btn-redo" class="btn" onclick="ejecutarRedo()" disabled>↪ Redo</button>
+            <div id="cloud-indicator" class="cloud-status" style="color:#eab308;">⏳ Conectando...</div>
+            <button class="btn btn-gold" onclick="abrirConfigModal()" title="Configurar nube">☁️ Config</button>
+            <button class="btn btn-gold" onclick="window.print()">📄 PDF</button>
+        </div>
+        <div class="tc-box">1 USD = <input type="number" id="tc" value="18.00" step="0.01" oninput="registrarCambio(); calcularTodo(); planearSincronizacion();"> MXN</div>
+    </header>
+
+    <div class="container">
+        <section class="grid-sum">
+            <div class="card card-main"><span class="card-title">Patrimonio Total</span><h3 id="resumen-total" class="card-val">$ 0.00 USD</h3></div>
+            <div class="card"><span class="card-title">Total Pesos</span><h3 id="resumen-mxn" class="card-val">$ 0.00 MXN</h3></div>
+            <div class="card"><span class="card-title">Total Dólares</span><h3 id="resumen-usd" class="card-val">$ 0.00 USD</h3></div>
+        </section>
+        <section class="liq-box">
+            <h3>Disponibilidad de Capital Consolidada (USD)</h3>
+            <div class="bar-wrapper"><div class="bar-info"><span>⚡ Inmediata / Cash</span><span id="val-liq-inmediata">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-inmediata" class="bar-fill"></div></div></div>
+            <div class="bar-wrapper"><div class="bar-info"><span>⏱️ Corto Plazo (24h)</span><span id="val-liq-24h">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-24h" class="bar-fill"></div></div></div>
+            <div class="bar-wrapper"><div class="bar-info"><span>🗓️ Mediano Plazo (Anual)</span><span id="val-liq-annual">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-annual" class="bar-fill"></div></div></div>
+            <div class="bar-wrapper"><div class="bar-info"><span>🔒 Largo Plazo / Retiro</span><span id="val-liq-retirement">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-retirement" class="bar-fill"></div></div></div>
+        </section>
+        <section class="grid-tables">
+            <div class="table-box border-gold">
+                <div class="table-hdr"><span>Pesos (MXN)</span><span id="total-mxn-footer">$ 0.00</span></div>
+                <div class="account-rows" id="contenedor-mxn"></div>
+                <button class="btn-add" onclick="agregarNuevaFila('mxn')">+ Nueva Categoría MXN</button>
+            </div>
+            <div class="table-box border-silver">
+                <div class="table-hdr"><span>Dólares (USD)</span><span id="total-usd-footer">$ 0.00</span></div>
+                <div class="account-rows" id="contenedor-usd"></div>
+                <button class="btn-add" onclick="agregarNuevaFila('usd')">+ Nueva Categoría USD</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ── Configuración de nube (JSONBin.io) ──────────────────────────────────
+        function getConfig() {
+            return {
+                binId:  localStorage.getItem('pc_bin_id')  || '',
+                apiKey: localStorage.getItem('pc_api_key') || ''
+            };
+        }
+
+        function nubeConfigurada() {
+            const { binId, apiKey } = getConfig();
+            return binId.trim() !== '' && apiKey.trim() !== '';
+        }
+
+        function abrirConfigModal() {
+            const { binId, apiKey } = getConfig();
+            document.getElementById('input-bin-id').value  = binId;
+            document.getElementById('input-api-key').value = apiKey;
+            document.getElementById('setup-modal').classList.add('visible');
+        }
+
+        function guardarConfigNube() {
+            const binId  = document.getElementById('input-bin-id').value.trim();
+            const apiKey = document.getElementById('input-api-key').value.trim();
+            if (!binId || !apiKey) { alert('Por favor completá los dos campos.'); return; }
+            localStorage.setItem('pc_bin_id',  binId);
+            localStorage.setItem('pc_api_key', apiKey);
+            document.getElementById('setup-modal').classList.remove('visible');
+            descargarDesdeNube();
+        }
+
+        // ── Datos ────────────────────────────────────────────────────────────────
+        let portafolioMXN = [
+            { c: "Cash", p: "Home", l: "Inmediata", v: 0 }, { c: "Mexico Account", p: "Citibanamex", l: "Inmediata", v: 0 }, { c: "Ahorro Fácil", p: "Citibanamex", l: "Inmediata", v: 0 },
+            { c: "Fondo Citibanamex", p: "Citibanamex", l: "24 hs", v: 0 }, { c: "Cetes", p: "Cetes Directos", l: "Inmediata", v: 0 }, { c: "Bonndia", p: "Cetes Directos", l: "Inmediata", v: 0 },
+            { c: "Fondo de ahorro", p: "Banorte", l: "Annual", v: 0 }, { c: "Plan de pension", p: "Banorte", l: "Retirement", v: 0 }, { c: "Afore retiro", p: "Citibanamex", l: "Retirement", v: 0 },
+            { c: "Acciones GBM", p: "GBM", l: "Inmediata", v: 0 }, { c: "Infonavit", p: "Infonavit", l: "Retirement", v: 0 }
+        ];
+
+        let portafolioUSD = [
+            { c: "Cash Mex", p: "Home", l: "Inmediata", v: 0 }, { c: "Cash Arg", p: "Home", l: "Inmediata", v: 0 }, { c: "Argentina Account", p: "Santander", l: "Inmediata", v: 0 },
+            { c: "US Account", p: "Wells Fargo", l: "Inmediata", v: 0 }, { c: "US Saving + CD", p: "Wells Fargo", l: "Inmediata", v: 0 }, { c: "Acciones Nike", p: "Fidelity", l: "Inmediata", v: 0 },
+            { c: "Criptomonedas", p: "Coinbase", l: "Inmediata", v: 0 }, { c: "Opciones Nike", p: "Fidelity", l: "Retirement", v: 0 }, { c: "Cash Arg", p: "Caja seguridad", l: "Inmediata", v: 0 },
+            { c: "Activos Arg", p: "Auto", l: "Inmediata", v: 0 }, { c: "USDc", p: "Dólar App", l: "Inmediata", v: 0 }
+        ];
+
+        let historialEstados = [], indiceHistorial = -1, bloqueandoHistorial = false, timerSincronizacion;
+
+        // ── Render ───────────────────────────────────────────────────────────────
+        function cargarListas() {
+            const render = (arr, t) => arr.map((item, i) => `
+                <div class="row-item">
+                    <div class="row-actions">
+                        <button class="btn-mini" onclick="reordenar('${t}',${i},-1)">▲</button>
+                        <button class="btn-mini" onclick="reordenar('${t}',${i},1)">▼</button>
+                        <button class="btn-mini" style="color:#ff4444;" onclick="eliminar('${t}',${i})">✕</button>
+                    </div>
+                    <div class="meta-container">
+                        <input type="text" class="input-inline" value="${item.c}" onchange="act('${t}',${i},'c',this.value)">
+                        <div class="meta-details">
+                            <input type="text" class="input-sub" value="${item.p}" onchange="act('${t}',${i},'p',this.value)"> •
+                            <select class="select-liq" onchange="act('${t}',${i},'l',this.value); calcularTodo(); planearSincronizacion()">
+                                <option value="Inmediata" ${item.l==='Inmediata'?'selected':''}>Inmediata</option>
+                                ${t==='mxn'?'<option value="24 hs" '+(item.l==='24 hs'?'selected':'')+'>24 hs</option>':''}
+                                <option value="Annual" ${item.l==='Annual'?'selected':''}>Annual</option>
+                                <option value="Retirement" ${item.l==='Retirement'?'selected':''}>Retirement</option>
+                            </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>
+                        </div>
+                    </div>
+                    <div class="input-box"><span>$</span><input type="number" value="${item.v}" oninput="act('${t}',${i},'v',this.value); calcularTodo(); planearSincronizacion()"></div>
+                </div>`).join('');
+            document.getElementById('contenedor-mxn').innerHTML = render(portafolioMXN, 'mxn');
+            document.getElementById('contenedor-usd').innerHTML = render(portafolioUSD, 'usd');
+        }
+
+        function act(tipo, indice, campo, valor) {
+            registrarCambio(); // ✅ BUG FIX: registrar antes de modificar
+            if (campo === 'v') valor = parseFloat(valor) || 0;
+            if (tipo === 'mxn') portafolioMXN[indice][campo] = valor;
+            else portafolioUSD[indice][campo] = valor;
+            if (campo !== 'v') planearSincronizacion();
+        }
+
+        function reordenar(tipo, indice, dir) {
+            const arr = (tipo === 'mxn') ? portafolioMXN : portafolioUSD, dest = indice + dir;
+            if (dest >= 0 && dest < arr.length) {
+                registrarCambio();
+                const temp = arr[indice]; arr[indice] = arr[dest]; arr[dest] = temp;
+                cargarListas(); calcularTodo(); planearSincronizacion();
+            }
+        }
+
+        function agregarNuevaFila(tipo) {
+            registrarCambio();
+            const obj = { c: "Nueva Cuenta", p: "Plataforma", l: "Inmediata", v: 0 };
+            if (tipo === 'mxn') portafolioMXN.push(obj); else portafolioUSD.push(obj);
+            cargarListas(); calcularTodo(); planearSincronizacion();
+        }
+
+        function eliminar(tipo, indice) {
+            registrarCambio();
+            if (tipo === 'mxn') portafolioMXN.splice(indice, 1); else portafolioUSD.splice(indice, 1);
+            cargarListas(); calcularTodo(); planearSincronizacion();
+        }
+
+        // ── Cálculos ─────────────────────────────────────────────────────────────
+        function calcularTodo() {
+            const tc = parseFloat(document.getElementById('tc').value) || 1;
+            let mX = 0, uS = 0, lI = 0, l24 = 0, lA = 0, lR = 0;
+            portafolioMXN.forEach(i => mX += i.v);
+            portafolioUSD.forEach(i => uS += i.v);
+            const pUSD = (mX / tc) + uS, pMXN = mX + (uS * tc);
+
+            portafolioMXN.forEach((item, i) => {
+                const vUSD = item.v / tc, pct = pUSD > 0 ? ((vUSD / pUSD) * 100).toFixed(1) : "0.0";
+                const el = document.getElementById(`share-mxn-${i}`); if (el) el.innerText = `${pct}%`;
+                if (item.l.includes('Inmediata')) lI += vUSD;
+                else if (item.l.includes('24 hs')) l24 += vUSD;
+                else if (item.l.includes('Annual')) lA += vUSD;
+                else lR += vUSD;
+            });
+            portafolioUSD.forEach((item, i) => {
+                const pct = pUSD > 0 ? ((item.v / pUSD) * 100).toFixed(1) : "0.0";
+                const el = document.getElementById(`share-usd-${i}`); if (el) el.innerText = `${pct}%`;
+                if (item.l.includes('Inmediata')) lI += item.v;
+                else if (item.l.includes('24 hs')) l24 += item.v;
+                else if (item.l.includes('Annual')) lA += item.v;
+                else lR += item.v;
+            });
+
+            const fmt = (v, m) => '$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + m;
+            document.getElementById('resumen-total').innerText = fmt(pUSD, 'USD');
+            document.getElementById('resumen-mxn').innerText   = fmt(pMXN, 'MXN');
+            document.getElementById('resumen-usd').innerText   = fmt(uS,   'USD');
+            document.getElementById('total-mxn-footer').innerText = fmt(mX, 'MXN');
+            document.getElementById('total-usd-footer').innerText = fmt(uS, 'USD');
+            document.getElementById('val-liq-inmediata').innerText = fmt(lI,  'USD');
+            document.getElementById('val-liq-24h').innerText       = fmt(l24, 'USD');
+            document.getElementById('val-liq-annual').innerText    = fmt(lA,  'USD');
+            document.getElementById('val-liq-retirement').innerText = fmt(lR, 'USD');
+
+            if (pUSD > 0) {
+                document.getElementById('bar-liq-inmediata').style.width  = ((lI  / pUSD) * 100) + '%';
+                document.getElementById('bar-liq-24h').style.width        = ((l24 / pUSD) * 100) + '%';
+                document.getElementById('bar-liq-annual').style.width     = ((lA  / pUSD) * 100) + '%';
+                document.getElementById('bar-liq-retirement').style.width = ((lR  / pUSD) * 100) + '%';
+            } else {
+                document.querySelectorAll('.bar-fill').forEach(b => b.style.width = '0%');
+            }
+        }
+
+        // ── Tipo de cambio real ──────────────────────────────────────────────────
+        async function obtenerTipoCambioReal() {
+            try {
+                // ✅ BUG FIX: URL correcta de la API
+                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await res.json();
+                if (data && data.rates && data.rates.MXN) {
+                    document.getElementById('tc').value = parseFloat(data.rates.MXN).toFixed(2);
+                    calcularTodo();
+                }
+            } catch (e) { /* Silencioso: usa el valor manual */ }
+        }
+
+        // ── Sincronización con JSONBin.io ────────────────────────────────────────
+        async function descargarDesdeNube() {
+            const ind = document.getElementById('cloud-indicator');
+            if (!nubeConfigurada()) {
+                ind.innerText = "☁️ Sin configurar"; ind.style.color = "#888";
+                cargarListas(); calcularTodo();
+                abrirConfigModal();
+                return;
+            }
+            const { binId, apiKey } = getConfig();
+            ind.innerText = "⏳ Cargando..."; ind.style.color = "#eab308";
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { 'X-Master-Key': apiKey }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const d = data.record;
+                if (d && d.valores_mxn && d.valores_mxn.length > 0) {
+                    document.getElementById('tc').value = d.tipo_cambio || 18;
+                    portafolioMXN = d.valores_mxn;
+                    portafolioUSD = d.valores_usd;
+                }
+                ind.innerText = "☁️ Sincronizado"; ind.style.color = "#b38728";
+                cargarListas(); calcularTodo();
+            } catch (e) {
+                ind.innerText = "❌ Error de nube"; ind.style.color = "#ef4444";
+                cargarListas(); calcularTodo();
+                console.error('Error de sincronización:', e);
+            }
+        }
+
+        function planearSincronizacion() {
+            const ind = document.getElementById('cloud-indicator');
+            ind.innerText = "⏳ Guardando..."; ind.style.color = "#eab308";
+            clearTimeout(timerSincronizacion);
+            timerSincronizacion = setTimeout(sincronizarNube, 1500);
+        }
+
+        async function sincronizarNube() {
+            const ind = document.getElementById('cloud-indicator');
+            if (!nubeConfigurada()) { ind.innerText = "☁️ Sin configurar"; ind.style.color = "#888"; return; }
+            const { binId, apiKey } = getConfig();
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "X-Master-Key": apiKey },
+                    body: JSON.stringify({
+                        valores_mxn: portafolioMXN,
+                        valores_usd: portafolioUSD,
+                        tipo_cambio: parseFloat(document.getElementById('tc').value) || 18,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                ind.innerText = "☁️ Sincronizado"; ind.style.color = "#b38728";
+            } catch (e) {
+                ind.innerText = "❌ Error"; ind.style.color = "#ef4444";
+                console.error('Error al guardar:', e);
+            }
+        }
+
+        // ── Historial Undo / Redo ────────────────────────────────────────────────
+        function registrarCambio() {
+            if (bloqueandoHistorial) return;
+            const snap = {
+                mxn: JSON.parse(JSON.stringify(portafolioMXN)),
+                usd: JSON.parse(JSON.stringify(portafolioUSD)),
+                tc: document.getElementById('tc').value
+            };
+            if (indiceHistorial < historialEstados.length - 1)
+                historialEstados = historialEstados.slice(0, indiceHistorial + 1);
+            historialEstados.push(JSON.stringify(snap));
+            indiceHistorial++;
+            document.getElementById('btn-undo').disabled = (indiceHistorial <= 0);
+            document.getElementById('btn-redo').disabled = (indiceHistorial >= historialEstados.length - 1);
+        }
+
+        function ejecutarUndo() {
+            if (indiceHistorial > 0) {
+                indiceHistorial--;
+                aplicarEstado(historialEstados[indiceHistorial]);
+                planearSincronizacion();
+            }
+        }
+
+        function ejecutarRedo() {
+            if (indiceHistorial < historialEstados.length - 1) {
+                indiceHistorial++; // ✅ BUG FIX: era historialEstados++ (incorrecto)
+                aplicarEstado(historialEstados[indiceHistorial]);
+                planearSincronizacion();
+            }
+        }
+
+        function aplicarEstado(raw) {
+            bloqueandoHistorial = true;
+            const s = JSON.parse(raw);
+            document.getElementById('tc').value = s.tc;
+            portafolioMXN = s.mxn; portafolioUSD = s.usd;
+            cargarListas(); calcularTodo();
+            bloqueandoHistorial = false;
+            document.getElementById('btn-undo').disabled = (indiceHistorial <= 0);
+            document.getElementById('btn-redo').disabled = (indiceHistorial >= historialEstados.length - 1);
+        }
+
+        // ── Init ─────────────────────────────────────────────────────────────────
+        window.onload = function () {
+            cargarListas();
+            calcularTodo();
+            descargarDesdeNube()
+                .then(() => obtenerTipoCambioReal())
+                .then(() => setTimeout(registrarCambio, 500));
+        };
+    </script>
+</body>
+</html>
