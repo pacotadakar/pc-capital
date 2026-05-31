@@ -495,6 +495,7 @@ function calcularTodo() {
     document.getElementById('val-liq-annual').innerText     = fmtN(lA,'USD');
     document.getElementById('val-liq-retirement').innerText = fmtN(lR,'USD');
 
+    guardarBufferVivo();
     renderChart();
 }
 
@@ -514,7 +515,11 @@ function renderChart() {
     }
     empty.style.display='none'; svg.style.display='block';
 
-    const data = historialMensual.slice(-18); // máx 18 meses
+    // Meses freezados (pasados) + punto vivo del mes actual
+    const frozen = historialMensual.filter(h => h.mes < mesActual()).slice(-17);
+    const liveTotal = totalActualUSD();
+    const livePoint = { mes: mesActual(), total: liveTotal, live: true };
+    const data = [...frozen, livePoint];
     const N = data.length;
     const first = data[0].total, last = data[N-1].total;
     const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
@@ -561,13 +566,16 @@ function renderChart() {
         return `<text x="${scX(i).toFixed(1)}" y="${H-10}" text-anchor="middle" fill="#383838" font-size="8" font-family="monospace">${lbl}</text>`;
     }).join('');
 
-    // Dots
+    // Dots — el último punto es VIVO (dorado pulsante), los demás son freezados
     const dots = data.map((d,i) => {
         const x=scX(i).toFixed(1), y=scY(d.total).toFixed(1);
-        const isLast=(i===N-1);
-        return isLast
-          ? `<circle cx="${x}" cy="${y}" r="5" fill="#b38728" opacity="0.25"/><circle cx="${x}" cy="${y}" r="3.5" fill="#b38728" stroke="#fcf6ba" stroke-width="1.2"/>`
-          : `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"><title>${d.mes}: $${Math.round(d.total).toLocaleString('en-US')} USD</title></circle>`;
+        if (d.live) {
+            // Punto vivo: anillo exterior + punto central brillante
+            return `<circle cx="${x}" cy="${y}" r="7" fill="#b38728" opacity="0.12"/>
+                    <circle cx="${x}" cy="${y}" r="4.5" fill="#b38728" opacity="0.2"/>
+                    <circle cx="${x}" cy="${y}" r="3" fill="#e5c158" stroke="#fcf6ba" stroke-width="1.5"/>`;
+        }
+        return `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"><title>${d.mes}: $${Math.round(d.total).toLocaleString('en-US')} USD</title></circle>`;
     }).join('');
 
     // Valor del último punto label
@@ -575,7 +583,7 @@ function renderChart() {
     const anchor = lx > W*0.75 ? 'end' : 'start';
     const lxOff = anchor==='end' ? lx-6 : lx+6;
     const lyOff = ly < pad.t+15 ? ly+14 : ly-8;
-    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(last/1000)}k</text>`;
+    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(last/1000)}k ●</text>`;
 
     svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
     svg.setAttribute('width',W); svg.setAttribute('height',H);
@@ -611,6 +619,29 @@ function totalActualUSD() {
     return Math.round((mX/tc)+uS);
 }
 
+// Guarda buffer vivo en localStorage — se actualiza en cada calcularTodo()
+function guardarBufferVivo() {
+    const total=totalActualUSD();
+    if (total===0) return;
+    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total }));
+}
+
+// Al iniciar: si el mes cambió, freeza el mes anterior con el último valor guardado
+function autoFreezeAlCambiarMes() {
+    const bufferRaw=localStorage.getItem('pc_live_buffer');
+    if (!bufferRaw) return;
+    const buffer=JSON.parse(bufferRaw);
+    if (buffer.mes < mesActual() && buffer.total > 0) {
+        const yaExiste=historialMensual.find(h=>h.mes===buffer.mes);
+        if (!yaExiste) {
+            historialMensual.push({ mes: buffer.mes, total: buffer.total });
+            historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
+            planearSincronizacion();
+        }
+    }
+}
+
+// Freezea manualmente el mes actual al final del mes
 function guardarSnapshotMes() {
     const total=totalActualUSD(), mes=mesActual();
     const idx=historialMensual.findIndex(h=>h.mes===mes);
@@ -620,19 +651,7 @@ function guardarSnapshotMes() {
     renderChart(); planearSincronizacion();
     const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const [y,m]=mes.split('-');
-    alert(`✅ ${meses[parseInt(m)-1]} ${y}: $ ${total.toLocaleString('en-US')} USD guardado`);
-}
-
-// Auto-snapshot: si el mes actual no está en el historial y hay datos, lo guarda silenciosamente
-function autoSnapshotSiCambioMes() {
-    const mes=mesActual(), total=totalActualUSD();
-    if (total===0) return;
-    const yaExiste=historialMensual.find(h=>h.mes===mes);
-    if (!yaExiste) {
-        historialMensual.push({mes,total});
-        historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
-        planearSincronizacion();
-    }
+    alert(`🔒 ${meses[parseInt(m)-1]} ${y} freezado: $ ${total.toLocaleString('en-US')} USD`);
 }
 
 // ── Tipo de cambio ─────────────────────────────────────────────────────────
@@ -733,7 +752,7 @@ window.onload = function() {
         .then(() => {
             setTimeout(() => {
                 registrarCambio();
-                autoSnapshotSiCambioMes(); // auto-registro si es mes nuevo
+                autoFreezeAlCambiarMes(); // freeza mes anterior si cambió
                 renderChart();
             }, 600);
         });
