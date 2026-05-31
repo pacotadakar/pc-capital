@@ -299,13 +299,26 @@
                 </div>
                 <div class="chart-period" id="chart-period">Cargando historial…</div>
             </div>
-            <button class="btn btn-gold" onclick="guardarSnapshotMes()" style="font-size:0.6rem; align-self:flex-start;">+ Guardar mes</button>
+            <div style="display:flex; gap:0.4rem; align-self:flex-start;">
+                <button class="btn btn-gold" onclick="guardarSnapshotMes()" style="font-size:0.6rem;">🔒 Cerrar mes</button>
+                <button class="btn" onclick="toggleHistEditor()" id="btn-hist-edit" style="font-size:0.6rem;">✏️ Editar</button>
+            </div>
         </div>
         <div id="chart-container" style="position:relative;">
             <div class="chart-empty" id="chart-empty" style="display:none;">
                 Presioná <strong style="color:var(--gold-bright)">📸 Mes</strong> para comenzar el historial
             </div>
             <svg id="evolucion-chart" style="display:none;" height="170"></svg>
+        </div>
+
+        <!-- Editor de historial colapsable -->
+        <div id="hist-editor" style="display:none; margin-top:1rem;">
+            <div style="height:1px; background:linear-gradient(90deg,transparent,#2a2a2a,transparent); margin-bottom:1rem;"></div>
+            <div style="font-size:0.58rem; color:#444; text-transform:uppercase; letter-spacing:0.14em; margin-bottom:0.75rem;">Meses freezados</div>
+            <div id="hist-rows" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+            <button onclick="agregarMesManual()" style="margin-top:0.6rem; width:100%; background:transparent; border:1px dashed #1e1e1e; color:#333; font-size:0.66rem; font-weight:bold; padding:0.4rem; border-radius:5px; cursor:pointer;"
+                onmouseover="this.style.borderColor='#b38728';this.style.color='#e5c158'"
+                onmouseout="this.style.borderColor='#1e1e1e';this.style.color='#333'">+ Agregar mes manualmente</button>
         </div>
     </section>
 
@@ -387,7 +400,7 @@ let portafolioUSD = [
 ];
 
 // Histórico base: Abril 2025 = $ 633,803 USD
-const HISTORIAL_BASE = [{ mes: "2026-04", total: 633803 }];
+const HISTORIAL_BASE = [{ mes: "2026-04", total: 616081 }];
 let historialMensual = [...HISTORIAL_BASE];
 let historialEstados=[], indiceHistorial=-1, bloqueandoHistorial=false, timerSincronizacion;
 
@@ -742,6 +755,71 @@ function aplicarEstado(raw) {
     cargarListas(); calcularTodo(); bloqueandoHistorial=false;
     document.getElementById('btn-undo').disabled=indiceHistorial<=0;
     document.getElementById('btn-redo').disabled=indiceHistorial>=historialEstados.length-1;
+}
+
+// ── Editor de historial ──────────────────────────────────────────────────
+function toggleHistEditor() {
+    const panel = document.getElementById('hist-editor');
+    const btn   = document.getElementById('btn-hist-edit');
+    const open  = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    btn.style.color     = open ? 'var(--gold-bright)' : '';
+    btn.style.borderColor = open ? 'var(--gold-dark)' : '';
+    if (open) renderHistEditor();
+}
+
+function renderHistEditor() {
+    const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const rows = document.getElementById('hist-rows');
+    // Solo meses freezados (pasados)
+    const frozen = historialMensual.filter(h => h.mes < mesActual());
+    if (frozen.length === 0) {
+        rows.innerHTML = '<div style="font-size:0.68rem;color:#333;padding:0.5rem 0;">No hay meses freezados todavía.</div>';
+        return;
+    }
+    rows.innerHTML = frozen.map((h, i) => {
+        const [y, m] = h.mes.split('-');
+        const label  = `${mNames[parseInt(m)]} ${y}`;
+        return `<div style="display:flex;align-items:center;gap:0.5rem;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:5px;padding:0.45rem 0.6rem;">
+            <span style="font-size:0.7rem;color:#555;min-width:60px;font-family:monospace;">${label}</span>
+            <span style="color:#2a2a2a;font-size:0.7rem;">$</span>
+            <input type="number" value="${h.total}"
+                style="background:transparent;border:none;color:#ddd;font-weight:700;font-family:monospace;font-size:0.82rem;width:100%;outline:none;text-align:right;"
+                onchange="editarMesHistorial('${h.mes}', this.value)">
+            <button onclick="eliminarMesHistorial('${h.mes}')"
+                style="background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:0.7rem;font-weight:bold;padding:0 0.2rem;"
+                onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#2a2a2a'">✕</button>
+        </div>`;
+    }).join('');
+}
+
+function editarMesHistorial(mes, valor) {
+    const total = parseInt(valor) || 0;
+    const idx   = historialMensual.findIndex(h => h.mes === mes);
+    if (idx >= 0) historialMensual[idx].total = total;
+    else historialMensual.push({ mes, total });
+    historialMensual.sort((a,b) => a.mes.localeCompare(b.mes));
+    renderChart(); planearSincronizacion();
+}
+
+function eliminarMesHistorial(mes) {
+    if (!confirm(`¿Eliminar el mes ${mes} del historial?`)) return;
+    historialMensual = historialMensual.filter(h => h.mes !== mes);
+    renderHistEditor(); renderChart(); planearSincronizacion();
+}
+
+function agregarMesManual() {
+    const mes = prompt('Ingresá el mes en formato AAAA-MM (ej: 2026-03):');
+    if (!mes || !/^\d{4}-\d{2}$/.test(mes)) { alert('Formato inválido. Usá AAAA-MM.'); return; }
+    if (mes >= mesActual()) { alert('Solo podés agregar meses pasados.'); return; }
+    const valorStr = prompt(`Total patrimonio en USD para ${mes}:`);
+    const total = parseInt(valorStr) || 0;
+    if (total === 0) return;
+    const idx = historialMensual.findIndex(h => h.mes === mes);
+    if (idx >= 0) historialMensual[idx].total = total;
+    else historialMensual.push({ mes, total });
+    historialMensual.sort((a,b) => a.mes.localeCompare(b.mes));
+    renderHistEditor(); renderChart(); planearSincronizacion();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
