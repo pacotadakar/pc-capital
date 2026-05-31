@@ -5,413 +5,740 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PC Capital - Live Dashboard</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-        body { background: #030303; color: #fff; padding: 1.5rem; padding-bottom: 3rem; }
-        header { background: #0c0c0c; border-bottom: 2px solid #b38728; padding: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-radius: 4px; flex-wrap: wrap; gap: 0.5rem; }
-        .logo { font-weight: 900; font-size: 1.3rem; color: #e5c158; }
-        .toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-        .btn { background: #141414; border: 1px solid #333; color: #ccc; font-size: 0.7rem; font-weight: 700; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
-        .btn:disabled { opacity: 0.35; cursor: default; }
-        .btn-gold { border: 1px solid #b38728; color: #e5c158; }
-        .cloud-status { font-size: 0.65rem; font-weight: bold; padding: 0.35rem; border-radius: 4px; background: #111; border: 1px solid #222; white-space: nowrap; }
-        .tc-box { background: #111; border: 1px solid #2a2a2a; padding: 0.4rem; border-radius: 6px; font-size: 0.7rem; color: #888; }
-        .tc-box input { background: transparent; border: none; color: #e5c158; font-weight: 800; font-size: 1rem; width: 60px; text-align: right; outline: none; }
-        .grid-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .card { padding: 1.25rem; border-radius: 6px; background: #0c0c0c; border: 1px solid #222; min-height: 110px; }
-        .card-main { border-left: 4px solid #b38728; background: linear-gradient(135deg, #1a150b, #0c0a05); color: #e5c158; }
-        .card-title { font-size: 0.65rem; font-weight: 700; color: #888; text-transform: uppercase; }
-        .card-val { font-size: 1.65rem; font-weight: 900; margin-top: 0.75rem; font-family: monospace; }
-        .liq-box { background: #0c0c0c; border: 1px solid #222; border-radius: 6px; padding: 1.25rem; margin-bottom: 2rem; }
-        .liq-box h3 { font-size: 0.75rem; color: #b38728; margin-bottom: 1rem; text-transform: uppercase; }
-        .bar-wrapper { margin-bottom: 0.85rem; }
-        .bar-info { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-bottom: 0.3rem; }
-        .bar-bg { background: #161616; height: 5px; border-radius: 2px; width: 100%; border: 1px solid #222; }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.4s; background: linear-gradient(90deg, #b38728, #fcf6ba); }
-        .grid-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; }
-        .table-box { background: #0c0c0c; border: 1px solid #222; border-radius: 6px; padding: 1.25rem; }
-        .table-hdr { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding-bottom: 0.75rem; margin-bottom: 1rem; font-weight: 900; }
-        .border-gold { border-top: 3px solid #b38728; }
-        .border-silver { border-top: 3px solid #ccc; }
-        .account-rows { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-        .row-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 0.6rem; border-radius: 4px; border: 1px solid #1c1c1c; gap: 0.5rem; }
-        .meta-container { display: flex; flex-direction: column; flex-grow: 1; }
-        .input-inline { background: transparent; border: none; color: #fff; font-size: 0.8rem; font-weight: 700; outline: none; width: 100%; max-width: 140px; }
-        .meta-details { font-size: 0.65rem; color: #666; display: flex; gap: 0.3rem; align-items: center; margin-top: 0.2rem; }
-        .input-sub { font-size: 0.65rem; color: #888; background: transparent; border: none; outline: none; width: 65px; }
-        .select-liq { background: #161616; color: #888; font-size: 0.6rem; border: 1px solid #222; padding: 0.1rem; outline: none; }
-        .share-badge { font-family: monospace; color: #b38728; font-weight: bold; }
-        .row-actions { display: flex; gap: 0.2rem; }
-        .btn-mini { background: transparent; border: none; color: #444; font-size: 0.65rem; cursor: pointer; font-weight: bold; }
-        .btn-mini:hover { color: #fff; }
-        .input-box { background: #060606; border: 1px solid #333; border-radius: 4px; padding: 0.35rem; display: flex; width: 130px; min-width: 130px; }
-        .input-box span { font-size: 0.75rem; color: #444; margin-right: 0.15rem; }
-        .input-box input { background: transparent; border: none; width: 100%; text-align: right; color: #fff; font-weight: 700; outline: none; font-family: monospace; font-size: 0.85rem; }
-        @media (max-width: 480px) {
-            .row-item { flex-wrap: wrap; gap: 0.4rem; }
-            .meta-container { min-width: 0; }
-            .input-inline { max-width: 100%; font-size: 0.85rem; }
+        :root {
+            --gold-dark: #7a5c1e; --gold-mid: #b38728; --gold-bright: #e5c158; --gold-light: #fcf6ba;
+            --silver-mid: #9ca3af; --bg-0: #030303; --bg-1: #0a0a0a; --bg-2: #111; --border: #1e1e1e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, 'SF Pro Display', sans-serif; }
+        body { background: var(--bg-0); color: #fff; padding: 1.25rem; padding-bottom: 3rem; }
+
+        /* ── Header ── */
+        header {
+            background: linear-gradient(160deg, #181818 0%, #0d0d0d 100%);
+            border: 1px solid #252525; border-bottom: 2px solid var(--gold-mid);
+            padding: 0.9rem 1.25rem; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.75rem; border-radius: 10px; flex-wrap: wrap; gap: 0.65rem;
+            box-shadow: 0 6px 32px rgba(179,135,40,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        /* ── Logo ── */
+        .logo-wrap { display: flex; align-items: center; gap: 0.8rem; }
+        .logo-badge {
+            width: 46px; height: 46px; border-radius: 10px; position: relative;
+            background: linear-gradient(145deg, #f5d060 0%, #e8b830 18%, #c89a20 38%, #a07818 55%, #c8a030 72%, #e8c840 88%, #f0d868 100%);
+            box-shadow: 0 2px 12px rgba(179,135,40,0.5), inset 0 1px 0 rgba(255,255,235,0.5), inset 0 -1px 0 rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            overflow: hidden;
+        }
+        .logo-badge::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 55%;
+            background: linear-gradient(180deg, rgba(255,255,220,0.28) 0%, transparent 100%);
+            border-radius: 10px 10px 0 0;
+        }
+        .logo-badge::after {
+            content: ''; position: absolute; top: 2px; left: 5px; right: 5px; height: 1px;
+            background: rgba(255,255,220,0.45);
+        }
+        .logo-pc-text {
+            font-weight: 900; font-size: 1.3rem; letter-spacing: -0.02em; position: relative; z-index:1;
+            color: rgba(40,25,0,0.85); text-shadow: 0 1px 0 rgba(255,240,160,0.5);
+        }
+        .logo-text { display: flex; flex-direction: column; line-height: 1.15; }
+        .logo-name {
+            font-weight: 900; font-size: 1.1rem; letter-spacing: 0.03em;
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 50%, var(--gold-mid) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .logo-sub { font-size: 0.45rem; font-weight: 700; letter-spacing: 0.38em; color: #444; text-transform: uppercase; }
+
+        /* ── Date badge ── */
+        .date-badge {
+            font-size: 0.62rem; color: #555; font-weight: 600; letter-spacing: 0.04em;
+            padding: 0.3rem 0.65rem; background: #0c0c0c; border: 1px solid #1c1c1c;
+            border-radius: 5px; white-space: nowrap;
+        }
+        .date-badge span { color: var(--gold-mid); }
+
+        /* ── Toolbar ── */
+        .toolbar { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
+        .btn {
+            background: linear-gradient(180deg, #1e1e1e 0%, #111 100%);
+            border: 1px solid #2a2a2a; color: #999; font-size: 0.67rem; font-weight: 700;
+            padding: 0.45rem 0.65rem; border-radius: 5px; cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .btn:disabled { opacity: 0.28; cursor: default; }
+        .btn-gold {
+            border: 1px solid #3a2a08; color: var(--gold-bright);
+            background: linear-gradient(180deg, #1c1508 0%, #0c0a04 100%);
+        }
+        .cloud-status {
+            font-size: 0.63rem; font-weight: bold; padding: 0.4rem 0.65rem;
+            border-radius: 5px; background: #0c0c0c; border: 1px solid #1c1c1c; white-space: nowrap;
+        }
+        .tc-box {
+            background: #0c0c0c; border: 1px solid #222; padding: 0.38rem 0.7rem;
+            border-radius: 6px; font-size: 0.67rem; color: #444;
+        }
+        .tc-box input {
+            background: transparent; border: none; color: var(--gold-bright);
+            font-weight: 800; font-size: 1rem; width: 58px; text-align: right; outline: none;
+        }
+
+        /* ── Cards ── */
+        .grid-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; margin-bottom: 1.75rem; }
+        .card {
+            padding: 1.1rem 1.25rem; border-radius: 8px;
+            background: linear-gradient(145deg, #131313 0%, #0c0c0c 100%);
+            border: 1px solid var(--border); position: relative; overflow: hidden;
+        }
+        .card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        }
+        .card-main {
+            border-left: 3px solid var(--gold-mid);
+            background: linear-gradient(145deg, #1c150a 0%, #100d06 60%, #0a0806 100%);
+            box-shadow: 0 4px 20px rgba(179,135,40,0.08);
+        }
+        .card-mxn { border-left: 3px solid #22c55e; }
+        .card-usd { border-left: 3px solid #60a5fa; }
+        .card-flag { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1; }
+        .card-title { font-size: 0.57rem; font-weight: 700; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.12em; }
+        .card-val {
+            font-size: 1.4rem; font-weight: 900; margin-top: 0.4rem; font-family: 'SF Mono', monospace;
+            background: linear-gradient(180deg, #e8e8e8 0%, #aaa 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .card-main .card-val {
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .card-share { font-size: 0.6rem; color: #3a3a3a; margin-top: 0.35rem; font-weight: 600; }
+
+        /* ── Liquidity ── */
+        .liq-box {
+            background: #0a0a0a; border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem;
+        }
+        .section-title { font-size: 0.58rem; color: var(--gold-mid); margin-bottom: 0.9rem; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; }
+        .bar-wrapper { margin-bottom: 0.75rem; }
+        .bar-info { display: flex; justify-content: space-between; font-size: 0.66rem; color: #666; margin-bottom: 0.28rem; }
+        .bar-bg { background: #0d0d0d; height: 5px; border-radius: 3px; border: 1px solid #181818; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.5s cubic-bezier(.4,0,.2,1);
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-bright), var(--gold-light)); border-radius: 3px; }
+
+        /* ── Chart ── */
+        .chart-box {
+            background: #0a0a0a; border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem;
+        }
+        .chart-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.9rem; flex-wrap: wrap; gap: 0.5rem; }
+        .chart-hdr-left { display: flex; flex-direction: column; gap: 0.25rem; }
+        .chart-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .chart-val { font-size: 1.3rem; font-weight: 900; font-family: monospace;
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .chart-chg { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
+        .chart-chg.pos { background: rgba(34,197,94,0.12); color: #22c55e; }
+        .chart-chg.neg { background: rgba(239,68,68,0.12); color: #ef4444; }
+        .chart-chg.neu { background: rgba(156,163,175,0.1); color: #9ca3af; }
+        .chart-period { font-size: 0.58rem; color: #3a3a3a; }
+        .chart-empty { text-align: center; color: #2a2a2a; font-size: 0.7rem; padding: 2.5rem 1rem; line-height: 1.9; }
+        #evolucion-chart { width: 100%; display: block; overflow: visible; }
+
+        /* ── Tables ── */
+        .grid-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1.25rem; }
+        .table-box { background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.25rem; }
+        .table-hdr { display: flex; justify-content: space-between; align-items: flex-start;
+            border-bottom: 1px solid var(--border); padding-bottom: 0.7rem; margin-bottom: 0.9rem; }
+        .table-hdr-left { display: flex; flex-direction: column; gap: 0.2rem; }
+        .table-hdr-title { font-weight: 900; font-size: 0.82rem; }
+        .table-hdr-share { font-size: 0.57rem; color: #3a3a3a; font-weight: 600; }
+        .table-hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.18rem; }
+        .table-hdr-total { font-weight: 900; font-size: 0.88rem; font-family: monospace; }
+        .table-hdr-sub { font-size: 0.57rem; color: var(--gold-mid); font-weight: 700; }
+        .border-gold { border-top: 3px solid var(--gold-mid); }
+        .border-blue  { border-top: 3px solid #60a5fa; }
+        .account-rows { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.9rem; }
+        .row-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%);
+            padding: 0.55rem; border-radius: 6px; border: 1px solid #1a1a1a; gap: 0.45rem;
+        }
+        .meta-container { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
+        .input-inline { background: transparent; border: none; color: #ddd; font-size: 0.78rem; font-weight: 700; outline: none; width: 100%; }
+        .meta-details { font-size: 0.58rem; color: #444; display: flex; gap: 0.28rem; align-items: center; margin-top: 0.18rem; flex-wrap: wrap; }
+        .input-sub { font-size: 0.58rem; color: #555; background: transparent; border: none; outline: none; width: 62px; }
+        .select-liq { background: #111; color: #555; font-size: 0.56rem; border: 1px solid #1e1e1e; padding: 0.1rem; outline: none; border-radius: 3px; }
+        .share-badge { font-family: monospace; color: var(--gold-mid); font-weight: bold; font-size: 0.58rem; }
+        .row-actions { display: flex; gap: 0.18rem; flex-shrink: 0; }
+        .btn-mini { background: transparent; border: none; color: #2e2e2e; font-size: 0.62rem; cursor: pointer; font-weight: bold; padding: 0.1rem; }
+        .btn-mini:hover { color: #ccc; }
+        .input-box {
+            background: #0c0c0c; border: 1px solid #242424; border-radius: 5px;
+            padding: 0.32rem 0.45rem; display: flex; align-items: center; width: 128px; min-width: 128px;
+        }
+        .input-box span { font-size: 0.7rem; color: #2e2e2e; margin-right: 0.12rem; }
+        .input-box input { background: transparent; border: none; width: 100%; text-align: right;
+            color: #ddd; font-weight: 700; outline: none; font-family: monospace; font-size: 0.82rem; }
+        .btn-add { width: 100%; background: transparent; border: 1px dashed #1e1e1e; color: #333;
+            font-size: 0.66rem; font-weight: bold; padding: 0.45rem; border-radius: 5px; cursor: pointer; }
+        .btn-add:hover { border-color: var(--gold-mid); color: var(--gold-bright); }
+
+        /* ── Modal ── */
+        #setup-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 999; align-items: center; justify-content: center; }
+        #setup-modal.visible { display: flex; }
+        .modal-box { background: #111; border: 1px solid var(--gold-mid); border-radius: 10px; padding: 1.75rem; max-width: 450px; width: 92%; }
+        .modal-box h2 { color: var(--gold-bright); font-size: 0.95rem; margin-bottom: 0.9rem; }
+        .modal-box p  { font-size: 0.7rem; color: #888; margin-bottom: 0.7rem; line-height: 1.7; }
+        .modal-box ol { font-size: 0.7rem; color: #888; margin-left: 1.1rem; margin-bottom: 0.9rem; line-height: 2.1; }
+        .modal-box a  { color: var(--gold-bright); }
+        .modal-input { width: 100%; background: #070707; border: 1px solid #2a2a2a; border-radius: 4px;
+            color: #fff; padding: 0.48rem; font-size: 0.76rem; margin-bottom: 0.45rem; outline: none; }
+        .modal-input:focus { border-color: var(--gold-mid); }
+        .btn-modal-save { background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold-mid) 100%);
+            color: #000; font-weight: 900; font-size: 0.78rem; border: none;
+            padding: 0.62rem 1.2rem; border-radius: 5px; cursor: pointer; width: 100%; }
+
+        /* ── Mobile ── */
+        @media (max-width: 500px) {
+            body { padding: 0.65rem; }
+            .row-item { flex-wrap: wrap; }
             .input-box { width: 100%; min-width: unset; }
             .input-box input { font-size: 1rem; }
-            .meta-details { flex-wrap: wrap; gap: 0.2rem; }
+            .card-val { font-size: 1.15rem; }
+            .chart-val { font-size: 1.05rem; }
+            header { padding: 0.75rem; }
         }
-        .btn-add { width: 100%; background: #111; border: 1px dashed #333; color: #888; font-size: 0.7rem; font-weight: bold; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
-        .btn-add:hover { border-color: #b38728; color: #e5c158; }
-
-        /* Setup modal */
-        #setup-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; align-items: center; justify-content: center; }
-        #setup-modal.visible { display: flex; }
-        .modal-box { background: #111; border: 1px solid #b38728; border-radius: 8px; padding: 2rem; max-width: 480px; width: 90%; }
-        .modal-box h2 { color: #e5c158; font-size: 1rem; margin-bottom: 1rem; }
-        .modal-box p { font-size: 0.75rem; color: #aaa; margin-bottom: 0.75rem; line-height: 1.6; }
-        .modal-box ol { font-size: 0.75rem; color: #aaa; margin-left: 1.2rem; margin-bottom: 1rem; line-height: 2; }
-        .modal-box a { color: #e5c158; }
-        .modal-input { width: 100%; background: #060606; border: 1px solid #333; border-radius: 4px; color: #fff; padding: 0.5rem; font-size: 0.8rem; margin-bottom: 0.5rem; outline: none; }
-        .modal-input:focus { border-color: #b38728; }
-        .btn-modal-save { background: #b38728; color: #000; font-weight: 900; font-size: 0.8rem; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; width: 100%; }
-        .btn-modal-save:hover { background: #e5c158; }
-
         @media print {
-            header, .toolbar, .input-box, .tc-box, .btn-add, .row-actions, #setup-modal { display: none !important; }
-            .card, .table-box, .row-item { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; }
+            header .toolbar, .input-box, .tc-box, .btn-add, .row-actions, #setup-modal { display: none !important; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Modal de configuración inicial -->
-    <div id="setup-modal">
-        <div class="modal-box">
-            <h2>⚙️ Configurar Sincronización en la Nube</h2>
-            <p>Para que el dashboard se sincronice entre tu Mac y tu iPhone necesitás crear un <strong style="color:#e5c158">bin gratuito en JSONBin.io</strong>. Solo hacés esto una vez.</p>
-            <ol>
-                <li>Entrá a <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> y creá una cuenta gratis</li>
-                <li>Creá un nuevo bin con el contenido <code style="color:#e5c158">{}</code></li>
-                <li>Copiá el <strong>BIN ID</strong> (ej: <code>6650a3...</code>)</li>
-                <li>Creá una <strong>API KEY</strong> desde tu perfil</li>
-                <li>Pegá ambos datos abajo 👇</li>
-            </ol>
-            <input class="modal-input" id="input-bin-id" type="text" placeholder="BIN ID  (ej: 6650a3c1ad19ca34f87a1234)" />
-            <input class="modal-input" id="input-api-key" type="text" placeholder="API KEY  (ej: $2a$10$...)" />
-            <button class="btn-modal-save" onclick="guardarConfigNube()">💾 Guardar y Conectar</button>
+<div id="setup-modal">
+    <div class="modal-box">
+        <h2>⚙️ Configurar Sincronización</h2>
+        <p>Necesitás un bin gratuito en <a href="https://jsonbin.io" target="_blank">jsonbin.io</a>. Solo lo configurás una vez por dispositivo.</p>
+        <ol>
+            <li>Creá cuenta en jsonbin.io</li>
+            <li>Creá un bin con <code style="color:var(--gold-bright)">{"valores_mxn":[],"valores_usd":[],"tipo_cambio":18}</code></li>
+            <li>Copiá el BIN ID y tu API KEY</li>
+        </ol>
+        <input class="modal-input" id="input-bin-id" type="text" placeholder="BIN ID">
+        <input class="modal-input" id="input-api-key" type="text" placeholder="API KEY">
+        <button class="btn-modal-save" onclick="guardarConfigNube()">💾 Guardar y Conectar</button>
+    </div>
+</div>
+
+<header>
+    <div class="logo-wrap">
+        <!-- Badge dorado metalico -->
+        <div class="logo-badge">
+            <span class="logo-pc-text">PC</span>
+        </div>
+        <div class="logo-text">
+            <span class="logo-name">PC Capital</span>
+            <span class="logo-sub">Patrimonio · Live</span>
         </div>
     </div>
 
-    <header>
-        <div class="logo">PC CAPITAL</div>
-        <div class="toolbar">
-            <button id="btn-undo" class="btn" onclick="ejecutarUndo()" disabled>↩ Undo</button>
-            <button id="btn-redo" class="btn" onclick="ejecutarRedo()" disabled>↪ Redo</button>
-            <div id="cloud-indicator" class="cloud-status" style="color:#eab308;">⏳ Conectando...</div>
-            <button class="btn btn-gold" onclick="abrirConfigModal()" title="Configurar nube">☁️ Config</button>
-            <button class="btn btn-gold" onclick="window.print()">📄 PDF</button>
-        </div>
-        <div class="tc-box">1 USD = <input type="number" id="tc" value="18.00" step="0.01" oninput="registrarCambio(); calcularTodo(); planearSincronizacion();"> MXN</div>
-    </header>
+    <div id="date-badge" class="date-badge">—</div>
 
-    <div class="container">
-        <section class="grid-sum">
-            <div class="card card-main"><span class="card-title">Patrimonio Total</span><h3 id="resumen-total" class="card-val">$ 0.00 USD</h3></div>
-            <div class="card"><span class="card-title">Total Pesos</span><h3 id="resumen-mxn" class="card-val">$ 0.00 MXN</h3></div>
-            <div class="card"><span class="card-title">Total Dólares</span><h3 id="resumen-usd" class="card-val">$ 0.00 USD</h3></div>
-        </section>
-        <section class="liq-box">
-            <h3>Disponibilidad de Capital Consolidada (USD)</h3>
-            <div class="bar-wrapper"><div class="bar-info"><span>⚡ Inmediata / Cash</span><span id="val-liq-inmediata">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-inmediata" class="bar-fill"></div></div></div>
-            <div class="bar-wrapper"><div class="bar-info"><span>⏱️ Corto Plazo (24h)</span><span id="val-liq-24h">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-24h" class="bar-fill"></div></div></div>
-            <div class="bar-wrapper"><div class="bar-info"><span>🗓️ Mediano Plazo (Anual)</span><span id="val-liq-annual">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-annual" class="bar-fill"></div></div></div>
-            <div class="bar-wrapper"><div class="bar-info"><span>🔒 Largo Plazo / Retiro</span><span id="val-liq-retirement">$ 0.00</span></div><div class="bar-bg"><div id="bar-liq-retirement" class="bar-fill"></div></div></div>
-        </section>
-        <section class="grid-tables">
-            <div class="table-box border-gold">
-                <div class="table-hdr"><span>Pesos (MXN)</span><span id="total-mxn-footer">$ 0.00</span></div>
-                <div class="account-rows" id="contenedor-mxn"></div>
-                <button class="btn-add" onclick="agregarNuevaFila('mxn')">+ Nueva Categoría MXN</button>
-            </div>
-            <div class="table-box border-silver">
-                <div class="table-hdr"><span>Dólares (USD)</span><span id="total-usd-footer">$ 0.00</span></div>
-                <div class="account-rows" id="contenedor-usd"></div>
-                <button class="btn-add" onclick="agregarNuevaFila('usd')">+ Nueva Categoría USD</button>
-            </div>
-        </section>
+    <div class="toolbar">
+        <button id="btn-undo" class="btn" onclick="ejecutarUndo()" disabled>↩</button>
+        <button id="btn-redo" class="btn" onclick="ejecutarRedo()" disabled>↪</button>
+        <div id="cloud-indicator" class="cloud-status" style="color:#eab308;">⏳</div>
+        <button class="btn btn-gold" onclick="guardarSnapshotMes()">📸 Mes</button>
+        <button class="btn btn-gold" onclick="abrirConfigModal()">☁️</button>
+        <button class="btn btn-gold" onclick="window.print()">📄</button>
     </div>
 
-    <script>
-        // ── Configuración de nube (JSONBin.io) ──────────────────────────────────
-        function getConfig() {
-            return {
-                binId:  localStorage.getItem('pc_bin_id')  || '',
-                apiKey: localStorage.getItem('pc_api_key') || ''
-            };
+    <div class="tc-box">1 USD = <input type="number" id="tc" value="18.00" step="0.01" oninput="registrarCambio(); calcularTodo(); planearSincronizacion();"> MXN</div>
+</header>
+
+<div class="container">
+    <section class="grid-sum">
+        <div class="card card-main">
+            <div class="card-flag">🇲🇽🇺🇸</div>
+            <span class="card-title">Patrimonio Total</span>
+            <h3 id="resumen-total" class="card-val">$ 0 USD</h3>
+        </div>
+        <div class="card card-mxn">
+            <div class="card-flag">🇲🇽</div>
+            <span class="card-title">Total Pesos</span>
+            <h3 id="resumen-mxn" class="card-val">$ 0 MXN</h3>
+            <div class="card-share" id="share-total-mxn">0% del patrimonio</div>
+        </div>
+        <div class="card card-usd">
+            <div class="card-flag">🇺🇸</div>
+            <span class="card-title">Total Dólares</span>
+            <h3 id="resumen-usd" class="card-val">$ 0 USD</h3>
+            <div class="card-share" id="share-total-usd">0% del patrimonio</div>
+        </div>
+    </section>
+
+    <section class="liq-box">
+        <div class="section-title">Disponibilidad de Capital (USD)</div>
+        <div class="bar-wrapper"><div class="bar-info"><span>⚡ Inmediata</span><span id="val-liq-inmediata">$ 0</span></div><div class="bar-bg"><div id="bar-liq-inmediata" class="bar-fill"></div></div></div>
+        <div class="bar-wrapper"><div class="bar-info"><span>⏱ Corto Plazo (24h)</span><span id="val-liq-24h">$ 0</span></div><div class="bar-bg"><div id="bar-liq-24h" class="bar-fill"></div></div></div>
+        <div class="bar-wrapper"><div class="bar-info"><span>🗓 Mediano Plazo (Anual)</span><span id="val-liq-annual">$ 0</span></div><div class="bar-bg"><div id="bar-liq-annual" class="bar-fill"></div></div></div>
+        <div class="bar-wrapper"><div class="bar-info"><span>🔒 Largo Plazo / Retiro</span><span id="val-liq-retirement">$ 0</span></div><div class="bar-bg"><div id="bar-liq-retirement" class="bar-fill"></div></div></div>
+    </section>
+
+    <!-- Gráfico tipo acciones -->
+    <section class="chart-box">
+        <div class="chart-hdr">
+            <div class="chart-hdr-left">
+                <div class="section-title" style="margin:0;">📈 Evolución Patrimonial</div>
+                <div class="chart-meta">
+                    <span class="chart-val" id="chart-last-val">—</span>
+                    <span class="chart-chg neu" id="chart-chg">—</span>
+                </div>
+                <div class="chart-period" id="chart-period">Cargando historial…</div>
+            </div>
+            <button class="btn btn-gold" onclick="guardarSnapshotMes()" style="font-size:0.6rem; align-self:flex-start;">+ Guardar mes</button>
+        </div>
+        <div id="chart-container" style="position:relative;">
+            <div class="chart-empty" id="chart-empty" style="display:none;">
+                Presioná <strong style="color:var(--gold-bright)">📸 Mes</strong> para comenzar el historial
+            </div>
+            <svg id="evolucion-chart" style="display:none;" height="170"></svg>
+        </div>
+    </section>
+
+    <section class="grid-tables">
+        <div class="table-box border-gold">
+            <div class="table-hdr">
+                <div class="table-hdr-left">
+                    <span class="table-hdr-title">🇲🇽 Pesos (MXN)</span>
+                    <span class="table-hdr-share" id="share-mxn-label">0% del patrimonio</span>
+                </div>
+                <div class="table-hdr-right">
+                    <span class="table-hdr-total" id="total-mxn-footer">$ 0 MXN</span>
+                    <span class="table-hdr-sub" id="pct-mxn-usd">≈ $ 0 USD</span>
+                </div>
+            </div>
+            <div class="account-rows" id="contenedor-mxn"></div>
+            <button class="btn-add" onclick="agregarNuevaFila('mxn')">+ Nueva Categoría MXN</button>
+        </div>
+        <div class="table-box border-blue">
+            <div class="table-hdr">
+                <div class="table-hdr-left">
+                    <span class="table-hdr-title">🇺🇸 Dólares (USD)</span>
+                    <span class="table-hdr-share" id="share-usd-label">0% del patrimonio</span>
+                </div>
+                <div class="table-hdr-right">
+                    <span class="table-hdr-total" id="total-usd-footer">$ 0 USD</span>
+                    <span class="table-hdr-sub" id="pct-usd-mxn">≈ $ 0 MXN</span>
+                </div>
+            </div>
+            <div class="account-rows" id="contenedor-usd"></div>
+            <button class="btn-add" onclick="agregarNuevaFila('usd')">+ Nueva Categoría USD</button>
+        </div>
+    </section>
+</div>
+
+<script>
+// ── Fecha ──────────────────────────────────────────────────────────────────
+(function mostrarFecha() {
+    const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const hoy   = new Date();
+    const str   = `${dias[hoy.getDay()]} ${hoy.getDate()} • <span>${meses[hoy.getMonth()]} ${hoy.getFullYear()}</span>`;
+    document.getElementById('date-badge').innerHTML = str;
+})();
+
+// ── Nube ──────────────────────────────────────────────────────────────────
+function getConfig() {
+    return { binId: localStorage.getItem('pc_bin_id')||'', apiKey: localStorage.getItem('pc_api_key')||'' };
+}
+function nubeConfigurada() { const {binId,apiKey}=getConfig(); return binId.trim()!=='' && apiKey.trim()!==''; }
+function abrirConfigModal() {
+    const {binId,apiKey}=getConfig();
+    document.getElementById('input-bin-id').value=binId;
+    document.getElementById('input-api-key').value=apiKey;
+    document.getElementById('setup-modal').classList.add('visible');
+}
+function guardarConfigNube() {
+    const binId=document.getElementById('input-bin-id').value.trim();
+    const apiKey=document.getElementById('input-api-key').value.trim();
+    if (!binId||!apiKey) { alert('Completá los dos campos.'); return; }
+    localStorage.setItem('pc_bin_id',binId);
+    localStorage.setItem('pc_api_key',apiKey);
+    document.getElementById('setup-modal').classList.remove('visible');
+    descargarDesdeNube();
+}
+
+// ── Datos ─────────────────────────────────────────────────────────────────
+let portafolioMXN = [
+    {c:"Cash",p:"Home",l:"Inmediata",v:0},{c:"Mexico Account",p:"Citibanamex",l:"Inmediata",v:0},{c:"Ahorro Fácil",p:"Citibanamex",l:"Inmediata",v:0},
+    {c:"Fondo Citibanamex",p:"Citibanamex",l:"24 hs",v:0},{c:"Cetes",p:"Cetes Directos",l:"Inmediata",v:0},{c:"Bonndia",p:"Cetes Directos",l:"Inmediata",v:0},
+    {c:"Fondo de ahorro",p:"Banorte",l:"Annual",v:0},{c:"Plan de pension",p:"Banorte",l:"Retirement",v:0},{c:"Afore retiro",p:"Citibanamex",l:"Retirement",v:0},
+    {c:"Acciones GBM",p:"GBM",l:"Inmediata",v:0},{c:"Infonavit",p:"Infonavit",l:"Retirement",v:0}
+];
+let portafolioUSD = [
+    {c:"Cash Mex",p:"Home",l:"Inmediata",v:0},{c:"Cash Arg",p:"Home",l:"Inmediata",v:0},{c:"Argentina Account",p:"Santander",l:"Inmediata",v:0},
+    {c:"US Account",p:"Wells Fargo",l:"Inmediata",v:0},{c:"US Saving + CD",p:"Wells Fargo",l:"Inmediata",v:0},{c:"Acciones Nike",p:"Fidelity",l:"Inmediata",v:0},
+    {c:"Criptomonedas",p:"Coinbase",l:"Inmediata",v:0},{c:"Opciones Nike",p:"Fidelity",l:"Retirement",v:0},{c:"Cash Arg",p:"Caja seguridad",l:"Inmediata",v:0},
+    {c:"Activos Arg",p:"Auto",l:"Inmediata",v:0},{c:"USDc",p:"Dólar App",l:"Inmediata",v:0}
+];
+
+// Histórico base: Abril 2025 = $ 633,803 USD
+const HISTORIAL_BASE = [{ mes: "2025-04", total: 633803 }];
+let historialMensual = [...HISTORIAL_BASE];
+let historialEstados=[], indiceHistorial=-1, bloqueandoHistorial=false, timerSincronizacion;
+
+// ── Render listas ─────────────────────────────────────────────────────────
+function cargarListas() {
+    const render = (arr,t) => arr.map((item,i) => `
+        <div class="row-item">
+            <div class="row-actions">
+                <button class="btn-mini" onclick="reordenar('${t}',${i},-1)">▲</button>
+                <button class="btn-mini" onclick="reordenar('${t}',${i},1)">▼</button>
+                <button class="btn-mini" style="color:#8b2020;" onclick="eliminar('${t}',${i})">✕</button>
+            </div>
+            <div class="meta-container">
+                <input type="text" class="input-inline" value="${item.c}" onchange="act('${t}',${i},'c',this.value)">
+                <div class="meta-details">
+                    <input type="text" class="input-sub" value="${item.p}" onchange="act('${t}',${i},'p',this.value)"> •
+                    <select class="select-liq" onchange="act('${t}',${i},'l',this.value); calcularTodo(); planearSincronizacion()">
+                        <option value="Inmediata" ${item.l==='Inmediata'?'selected':''}>Inmediata</option>
+                        ${t==='mxn'?`<option value="24 hs" ${item.l==='24 hs'?'selected':''}>24 hs</option>`:''}
+                        <option value="Annual" ${item.l==='Annual'?'selected':''}>Annual</option>
+                        <option value="Retirement" ${item.l==='Retirement'?'selected':''}>Retirement</option>
+                    </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>
+                </div>
+            </div>
+            <div class="input-box"><span>$</span><input type="number" value="${item.v}" oninput="act('${t}',${i},'v',this.value); calcularTodo(); planearSincronizacion()"></div>
+        </div>`).join('');
+    document.getElementById('contenedor-mxn').innerHTML = render(portafolioMXN,'mxn');
+    document.getElementById('contenedor-usd').innerHTML = render(portafolioUSD,'usd');
+}
+function act(tipo,indice,campo,valor) {
+    registrarCambio();
+    if (campo==='v') valor=parseFloat(valor)||0;
+    (tipo==='mxn'?portafolioMXN:portafolioUSD)[indice][campo]=valor;
+    if (campo!=='v') planearSincronizacion();
+}
+function reordenar(tipo,indice,dir) {
+    const arr=(tipo==='mxn')?portafolioMXN:portafolioUSD, dest=indice+dir;
+    if (dest>=0 && dest<arr.length) {
+        registrarCambio(); const tmp=arr[indice]; arr[indice]=arr[dest]; arr[dest]=tmp;
+        cargarListas(); calcularTodo(); planearSincronizacion();
+    }
+}
+function agregarNuevaFila(tipo) {
+    registrarCambio();
+    (tipo==='mxn'?portafolioMXN:portafolioUSD).push({c:"Nueva Cuenta",p:"Plataforma",l:"Inmediata",v:0});
+    cargarListas(); calcularTodo(); planearSincronizacion();
+}
+function eliminar(tipo,indice) {
+    registrarCambio();
+    (tipo==='mxn'?portafolioMXN:portafolioUSD).splice(indice,1);
+    cargarListas(); calcularTodo(); planearSincronizacion();
+}
+
+// ── Cálculos ──────────────────────────────────────────────────────────────
+const fmtN  = (v,c) => '$ '+Math.round(v).toLocaleString('en-US')+' '+c;
+const fmtNs = (v,c) => '≈ $ '+Math.round(v).toLocaleString('en-US')+' '+c;
+const pct   = (a,b) => b>0 ? ((a/b)*100).toFixed(1)+'%' : '0%';
+
+function calcularTodo() {
+    const tc=parseFloat(document.getElementById('tc').value)||1;
+    let mX=0, uS=0, lI=0, l24=0, lA=0, lR=0;
+    portafolioMXN.forEach(i=>mX+=i.v);
+    portafolioUSD.forEach(i=>uS+=i.v);
+    const pUSD=(mX/tc)+uS, mxnEnUSD=mX/tc;
+
+    portafolioMXN.forEach((item,i) => {
+        const vUSD=item.v/tc, el=document.getElementById(`share-mxn-${i}`);
+        if(el) el.innerText=pct(vUSD,pUSD);
+        if(item.l.includes('Inmediata')) lI+=vUSD;
+        else if(item.l.includes('24')) l24+=vUSD;
+        else if(item.l.includes('Annual')) lA+=vUSD;
+        else lR+=vUSD;
+    });
+    portafolioUSD.forEach((item,i) => {
+        const el=document.getElementById(`share-usd-${i}`);
+        if(el) el.innerText=pct(item.v,pUSD);
+        if(item.l.includes('Inmediata')) lI+=item.v;
+        else if(item.l.includes('24')) l24+=item.v;
+        else if(item.l.includes('Annual')) lA+=item.v;
+        else lR+=item.v;
+    });
+
+    document.getElementById('resumen-total').innerText = fmtN(pUSD,'USD');
+    document.getElementById('resumen-mxn').innerText   = fmtN(mX,'MXN');
+    document.getElementById('resumen-usd').innerText   = fmtN(uS,'USD');
+    document.getElementById('share-total-mxn').innerText = pct(mxnEnUSD,pUSD)+' del patrimonio';
+    document.getElementById('share-total-usd').innerText = pct(uS,pUSD)+' del patrimonio';
+    document.getElementById('total-mxn-footer').innerText = fmtN(mX,'MXN');
+    document.getElementById('pct-mxn-usd').innerText      = fmtNs(mxnEnUSD,'USD');
+    document.getElementById('share-mxn-label').innerText  = pct(mxnEnUSD,pUSD)+' del patrimonio total';
+    document.getElementById('total-usd-footer').innerText = fmtN(uS,'USD');
+    document.getElementById('pct-usd-mxn').innerText      = fmtNs(uS*tc,'MXN');
+    document.getElementById('share-usd-label').innerText  = pct(uS,pUSD)+' del patrimonio total';
+
+    if (pUSD>0) {
+        document.getElementById('bar-liq-inmediata').style.width  = (lI/pUSD*100)+'%';
+        document.getElementById('bar-liq-24h').style.width        = (l24/pUSD*100)+'%';
+        document.getElementById('bar-liq-annual').style.width     = (lA/pUSD*100)+'%';
+        document.getElementById('bar-liq-retirement').style.width = (lR/pUSD*100)+'%';
+    } else {
+        document.querySelectorAll('.bar-fill').forEach(b=>b.style.width='0%');
+    }
+    document.getElementById('val-liq-inmediata').innerText  = fmtN(lI,'USD');
+    document.getElementById('val-liq-24h').innerText        = fmtN(l24,'USD');
+    document.getElementById('val-liq-annual').innerText     = fmtN(lA,'USD');
+    document.getElementById('val-liq-retirement').innerText = fmtN(lR,'USD');
+
+    renderChart();
+}
+
+// ── Gráfico tipo acciones ─────────────────────────────────────────────────
+function renderChart() {
+    const svg=document.getElementById('evolucion-chart');
+    const empty=document.getElementById('chart-empty');
+    const lastValEl=document.getElementById('chart-last-val');
+    const chgEl=document.getElementById('chart-chg');
+    const periodEl=document.getElementById('chart-period');
+
+    if (!historialMensual||historialMensual.length<1) {
+        svg.style.display='none'; empty.style.display='block';
+        lastValEl.innerText='—'; chgEl.innerText='—'; chgEl.className='chart-chg neu';
+        periodEl.innerText='Sin datos aún';
+        return;
+    }
+    empty.style.display='none'; svg.style.display='block';
+
+    const data = historialMensual.slice(-18); // máx 18 meses
+    const N = data.length;
+    const first = data[0].total, last = data[N-1].total;
+    const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
+
+    // Header del gráfico
+    lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
+    const sign = diff >= 0 ? '+' : '';
+    chgEl.innerText = `${sign}${sign==='-'?'':'+'}${diffPct.toFixed(1)}% (${sign}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')})`;
+    chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
+    chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
+    const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
+    periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
+
+    // SVG dimensions
+    const W = Math.max(svg.parentElement.clientWidth||320, 200), H = 170;
+    const pad = {t:14, r:14, b:36, l:56};
+    const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+    const vals = data.map(d=>d.total);
+    const minV = Math.min(...vals)*0.94, maxV = Math.max(...vals)*1.05;
+    const range = maxV - minV || 1;
+    const scX = i => N<2 ? pad.l+iW/2 : pad.l+(i/(N-1))*iW;
+    const scY = v => pad.t+iH - ((v-minV)/range)*iH;
+
+    // Polyline points (stock-style: angular)
+    const pts = data.map((d,i)=>`${scX(i).toFixed(1)},${scY(d.total).toFixed(1)}`).join(' ');
+    const fillPts = `${scX(0).toFixed(1)},${(pad.t+iH).toFixed(1)} ${pts} ${scX(N-1).toFixed(1)},${(pad.t+iH).toFixed(1)}`;
+
+    // Y gridlines & labels (3 ticks)
+    const gridStep = range / 3;
+    const yGrid = [0,1,2,3].map(k => {
+        const v = minV + gridStep*k, y = scY(v);
+        const lbl = v>=1e6 ? (v/1e6).toFixed(2)+'M' : v>=1000 ? Math.round(v/1000)+'k' : Math.round(v);
+        return `<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+iW}" y2="${y.toFixed(1)}" stroke="#181818" stroke-width="1" stroke-dasharray="3,3"/>
+                <text x="${pad.l-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="#383838" font-size="8.5" font-family="monospace">${lbl}</text>`;
+    }).join('');
+
+    // X labels
+    const step = N > 12 ? 3 : N > 7 ? 2 : 1;
+    const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const xLabels = data.map((d,i) => {
+        if (i%step!==0 && i!==N-1) return '';
+        const [y,mo]=d.mes.split('-');
+        const lbl=`${mNames[parseInt(mo)]}'${y.slice(2)}`;
+        return `<text x="${scX(i).toFixed(1)}" y="${H-10}" text-anchor="middle" fill="#383838" font-size="8" font-family="monospace">${lbl}</text>`;
+    }).join('');
+
+    // Dots
+    const dots = data.map((d,i) => {
+        const x=scX(i).toFixed(1), y=scY(d.total).toFixed(1);
+        const isLast=(i===N-1);
+        return isLast
+          ? `<circle cx="${x}" cy="${y}" r="5" fill="#b38728" opacity="0.25"/><circle cx="${x}" cy="${y}" r="3.5" fill="#b38728" stroke="#fcf6ba" stroke-width="1.2"/>`
+          : `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"><title>${d.mes}: $${Math.round(d.total).toLocaleString('en-US')} USD</title></circle>`;
+    }).join('');
+
+    // Valor del último punto label
+    const lx=scX(N-1), ly=scY(last);
+    const anchor = lx > W*0.75 ? 'end' : 'start';
+    const lxOff = anchor==='end' ? lx-6 : lx+6;
+    const lyOff = ly < pad.t+15 ? ly+14 : ly-8;
+    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(last/1000)}k</text>`;
+
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    svg.setAttribute('width',W); svg.setAttribute('height',H);
+    svg.innerHTML=`
+        <defs>
+            <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#b38728" stop-opacity="0.22"/>
+                <stop offset="80%" stop-color="#b38728" stop-opacity="0.03"/>
+                <stop offset="100%" stop-color="#b38728" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="lineG" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#6a4c14"/>
+                <stop offset="40%" stop-color="#c49a20"/>
+                <stop offset="100%" stop-color="#fcf6ba"/>
+            </linearGradient>
+        </defs>
+        ${yGrid}
+        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="#1a1a1a" stroke-width="1"/>
+        <polygon points="${fillPts}" fill="url(#areaG)"/>
+        <polyline points="${pts}" fill="none" stroke="url(#lineG)" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square"/>
+        ${dots}
+        ${lastLabel}
+        ${xLabels}`;
+}
+
+// ── Snapshot mensual ──────────────────────────────────────────────────────
+function mesActual() {
+    const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+}
+function totalActualUSD() {
+    const tc=parseFloat(document.getElementById('tc').value)||1;
+    let mX=0,uS=0; portafolioMXN.forEach(i=>mX+=i.v); portafolioUSD.forEach(i=>uS+=i.v);
+    return Math.round((mX/tc)+uS);
+}
+
+function guardarSnapshotMes() {
+    const total=totalActualUSD(), mes=mesActual();
+    const idx=historialMensual.findIndex(h=>h.mes===mes);
+    if (idx>=0) historialMensual[idx].total=total;
+    else historialMensual.push({mes,total});
+    historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
+    renderChart(); planearSincronizacion();
+    const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const [y,m]=mes.split('-');
+    alert(`✅ ${meses[parseInt(m)-1]} ${y}: $ ${total.toLocaleString('en-US')} USD guardado`);
+}
+
+// Auto-snapshot: si el mes actual no está en el historial y hay datos, lo guarda silenciosamente
+function autoSnapshotSiCambioMes() {
+    const mes=mesActual(), total=totalActualUSD();
+    if (total===0) return;
+    const yaExiste=historialMensual.find(h=>h.mes===mes);
+    if (!yaExiste) {
+        historialMensual.push({mes,total});
+        historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
+        planearSincronizacion();
+    }
+}
+
+// ── Tipo de cambio ─────────────────────────────────────────────────────────
+async function obtenerTipoCambioReal() {
+    try {
+        const res=await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data=await res.json();
+        if (data?.rates?.MXN) { document.getElementById('tc').value=parseFloat(data.rates.MXN).toFixed(2); calcularTodo(); }
+    } catch(e) {}
+}
+
+// ── Sincronización JSONBin ─────────────────────────────────────────────────
+async function descargarDesdeNube() {
+    const ind=document.getElementById('cloud-indicator');
+    if (!nubeConfigurada()) {
+        ind.innerText="☁️ Sin config"; ind.style.color="#888";
+        cargarListas(); calcularTodo(); abrirConfigModal(); return;
+    }
+    const {binId,apiKey}=getConfig();
+    ind.innerText="⏳"; ind.style.color="#eab308";
+    try {
+        const res=await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`,{headers:{'X-Master-Key':apiKey}});
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data=await res.json(), d=data.record;
+        if (d?.valores_mxn?.length>0) {
+            document.getElementById('tc').value=d.tipo_cambio||18;
+            portafolioMXN=d.valores_mxn;
+            portafolioUSD=d.valores_usd;
         }
-
-        function nubeConfigurada() {
-            const { binId, apiKey } = getConfig();
-            return binId.trim() !== '' && apiKey.trim() !== '';
+        // Merge historial: base (abril) + nube, sin duplicados, nube tiene prioridad
+        if (d?.historial_mensual?.length>0) {
+            const cloudMonths=new Set(d.historial_mensual.map(h=>h.mes));
+            const baseExtra=HISTORIAL_BASE.filter(h=>!cloudMonths.has(h.mes));
+            historialMensual=[...baseExtra,...d.historial_mensual].sort((a,b)=>a.mes.localeCompare(b.mes));
         }
+        ind.innerText="☁️ Sync"; ind.style.color="#b38728";
+        cargarListas(); calcularTodo();
+    } catch(e) {
+        ind.innerText="❌ Error"; ind.style.color="#ef4444";
+        cargarListas(); calcularTodo();
+        console.error(e);
+    }
+}
 
-        function abrirConfigModal() {
-            const { binId, apiKey } = getConfig();
-            document.getElementById('input-bin-id').value  = binId;
-            document.getElementById('input-api-key').value = apiKey;
-            document.getElementById('setup-modal').classList.add('visible');
-        }
+function planearSincronizacion() {
+    const ind=document.getElementById('cloud-indicator');
+    ind.innerText="⏳ Guardando…"; ind.style.color="#eab308";
+    clearTimeout(timerSincronizacion);
+    timerSincronizacion=setTimeout(sincronizarNube,1500);
+}
 
-        function guardarConfigNube() {
-            const binId  = document.getElementById('input-bin-id').value.trim();
-            const apiKey = document.getElementById('input-api-key').value.trim();
-            if (!binId || !apiKey) { alert('Por favor completá los dos campos.'); return; }
-            localStorage.setItem('pc_bin_id',  binId);
-            localStorage.setItem('pc_api_key', apiKey);
-            document.getElementById('setup-modal').classList.remove('visible');
-            descargarDesdeNube();
-        }
+async function sincronizarNube() {
+    const ind=document.getElementById('cloud-indicator');
+    if (!nubeConfigurada()) { ind.innerText="☁️ Sin config"; ind.style.color="#888"; return; }
+    const {binId,apiKey}=getConfig();
+    try {
+        const res=await fetch(`https://api.jsonbin.io/v3/b/${binId}`,{
+            method:"PUT",
+            headers:{"Content-Type":"application/json","X-Master-Key":apiKey},
+            body:JSON.stringify({
+                valores_mxn:portafolioMXN, valores_usd:portafolioUSD,
+                tipo_cambio:parseFloat(document.getElementById('tc').value)||18,
+                historial_mensual:historialMensual,
+                updated_at:new Date().toISOString()
+            })
+        });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        ind.innerText="☁️ Sync"; ind.style.color="#b38728";
+    } catch(e) { ind.innerText="❌ Error"; ind.style.color="#ef4444"; console.error(e); }
+}
 
-        // ── Datos ────────────────────────────────────────────────────────────────
-        let portafolioMXN = [
-            { c: "Cash", p: "Home", l: "Inmediata", v: 0 }, { c: "Mexico Account", p: "Citibanamex", l: "Inmediata", v: 0 }, { c: "Ahorro Fácil", p: "Citibanamex", l: "Inmediata", v: 0 },
-            { c: "Fondo Citibanamex", p: "Citibanamex", l: "24 hs", v: 0 }, { c: "Cetes", p: "Cetes Directos", l: "Inmediata", v: 0 }, { c: "Bonndia", p: "Cetes Directos", l: "Inmediata", v: 0 },
-            { c: "Fondo de ahorro", p: "Banorte", l: "Annual", v: 0 }, { c: "Plan de pension", p: "Banorte", l: "Retirement", v: 0 }, { c: "Afore retiro", p: "Citibanamex", l: "Retirement", v: 0 },
-            { c: "Acciones GBM", p: "GBM", l: "Inmediata", v: 0 }, { c: "Infonavit", p: "Infonavit", l: "Retirement", v: 0 }
-        ];
+// ── Undo / Redo ───────────────────────────────────────────────────────────
+function registrarCambio() {
+    if (bloqueandoHistorial) return;
+    const snap={mxn:JSON.parse(JSON.stringify(portafolioMXN)),usd:JSON.parse(JSON.stringify(portafolioUSD)),tc:document.getElementById('tc').value};
+    if (indiceHistorial<historialEstados.length-1) historialEstados=historialEstados.slice(0,indiceHistorial+1);
+    historialEstados.push(JSON.stringify(snap)); indiceHistorial++;
+    document.getElementById('btn-undo').disabled=indiceHistorial<=0;
+    document.getElementById('btn-redo').disabled=indiceHistorial>=historialEstados.length-1;
+}
+function ejecutarUndo() { if(indiceHistorial>0){indiceHistorial--;aplicarEstado(historialEstados[indiceHistorial]);planearSincronizacion();} }
+function ejecutarRedo() { if(indiceHistorial<historialEstados.length-1){indiceHistorial++;aplicarEstado(historialEstados[indiceHistorial]);planearSincronizacion();} }
+function aplicarEstado(raw) {
+    bloqueandoHistorial=true;
+    const s=JSON.parse(raw);
+    document.getElementById('tc').value=s.tc;
+    portafolioMXN=s.mxn; portafolioUSD=s.usd;
+    cargarListas(); calcularTodo(); bloqueandoHistorial=false;
+    document.getElementById('btn-undo').disabled=indiceHistorial<=0;
+    document.getElementById('btn-redo').disabled=indiceHistorial>=historialEstados.length-1;
+}
 
-        let portafolioUSD = [
-            { c: "Cash Mex", p: "Home", l: "Inmediata", v: 0 }, { c: "Cash Arg", p: "Home", l: "Inmediata", v: 0 }, { c: "Argentina Account", p: "Santander", l: "Inmediata", v: 0 },
-            { c: "US Account", p: "Wells Fargo", l: "Inmediata", v: 0 }, { c: "US Saving + CD", p: "Wells Fargo", l: "Inmediata", v: 0 }, { c: "Acciones Nike", p: "Fidelity", l: "Inmediata", v: 0 },
-            { c: "Criptomonedas", p: "Coinbase", l: "Inmediata", v: 0 }, { c: "Opciones Nike", p: "Fidelity", l: "Retirement", v: 0 }, { c: "Cash Arg", p: "Caja seguridad", l: "Inmediata", v: 0 },
-            { c: "Activos Arg", p: "Auto", l: "Inmediata", v: 0 }, { c: "USDc", p: "Dólar App", l: "Inmediata", v: 0 }
-        ];
-
-        let historialEstados = [], indiceHistorial = -1, bloqueandoHistorial = false, timerSincronizacion;
-
-        // ── Render ───────────────────────────────────────────────────────────────
-        function cargarListas() {
-            const render = (arr, t) => arr.map((item, i) => `
-                <div class="row-item">
-                    <div class="row-actions">
-                        <button class="btn-mini" onclick="reordenar('${t}',${i},-1)">▲</button>
-                        <button class="btn-mini" onclick="reordenar('${t}',${i},1)">▼</button>
-                        <button class="btn-mini" style="color:#ff4444;" onclick="eliminar('${t}',${i})">✕</button>
-                    </div>
-                    <div class="meta-container">
-                        <input type="text" class="input-inline" value="${item.c}" onchange="act('${t}',${i},'c',this.value)">
-                        <div class="meta-details">
-                            <input type="text" class="input-sub" value="${item.p}" onchange="act('${t}',${i},'p',this.value)"> •
-                            <select class="select-liq" onchange="act('${t}',${i},'l',this.value); calcularTodo(); planearSincronizacion()">
-                                <option value="Inmediata" ${item.l==='Inmediata'?'selected':''}>Inmediata</option>
-                                ${t==='mxn'?'<option value="24 hs" '+(item.l==='24 hs'?'selected':'')+'>24 hs</option>':''}
-                                <option value="Annual" ${item.l==='Annual'?'selected':''}>Annual</option>
-                                <option value="Retirement" ${item.l==='Retirement'?'selected':''}>Retirement</option>
-                            </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>
-                        </div>
-                    </div>
-                    <div class="input-box"><span>$</span><input type="number" value="${item.v}" oninput="act('${t}',${i},'v',this.value); calcularTodo(); planearSincronizacion()"></div>
-                </div>`).join('');
-            document.getElementById('contenedor-mxn').innerHTML = render(portafolioMXN, 'mxn');
-            document.getElementById('contenedor-usd').innerHTML = render(portafolioUSD, 'usd');
-        }
-
-        function act(tipo, indice, campo, valor) {
-            registrarCambio(); // ✅ BUG FIX: registrar antes de modificar
-            if (campo === 'v') valor = parseFloat(valor) || 0;
-            if (tipo === 'mxn') portafolioMXN[indice][campo] = valor;
-            else portafolioUSD[indice][campo] = valor;
-            if (campo !== 'v') planearSincronizacion();
-        }
-
-        function reordenar(tipo, indice, dir) {
-            const arr = (tipo === 'mxn') ? portafolioMXN : portafolioUSD, dest = indice + dir;
-            if (dest >= 0 && dest < arr.length) {
+// ── Init ──────────────────────────────────────────────────────────────────
+window.onload = function() {
+    cargarListas(); calcularTodo();
+    descargarDesdeNube()
+        .then(() => obtenerTipoCambioReal())
+        .then(() => {
+            setTimeout(() => {
                 registrarCambio();
-                const temp = arr[indice]; arr[indice] = arr[dest]; arr[dest] = temp;
-                cargarListas(); calcularTodo(); planearSincronizacion();
-            }
-        }
-
-        function agregarNuevaFila(tipo) {
-            registrarCambio();
-            const obj = { c: "Nueva Cuenta", p: "Plataforma", l: "Inmediata", v: 0 };
-            if (tipo === 'mxn') portafolioMXN.push(obj); else portafolioUSD.push(obj);
-            cargarListas(); calcularTodo(); planearSincronizacion();
-        }
-
-        function eliminar(tipo, indice) {
-            registrarCambio();
-            if (tipo === 'mxn') portafolioMXN.splice(indice, 1); else portafolioUSD.splice(indice, 1);
-            cargarListas(); calcularTodo(); planearSincronizacion();
-        }
-
-        // ── Cálculos ─────────────────────────────────────────────────────────────
-        function calcularTodo() {
-            const tc = parseFloat(document.getElementById('tc').value) || 1;
-            let mX = 0, uS = 0, lI = 0, l24 = 0, lA = 0, lR = 0;
-            portafolioMXN.forEach(i => mX += i.v);
-            portafolioUSD.forEach(i => uS += i.v);
-            const pUSD = (mX / tc) + uS, pMXN = mX + (uS * tc);
-
-            portafolioMXN.forEach((item, i) => {
-                const vUSD = item.v / tc, pct = pUSD > 0 ? ((vUSD / pUSD) * 100).toFixed(1) : "0.0";
-                const el = document.getElementById(`share-mxn-${i}`); if (el) el.innerText = `${pct}%`;
-                if (item.l.includes('Inmediata')) lI += vUSD;
-                else if (item.l.includes('24 hs')) l24 += vUSD;
-                else if (item.l.includes('Annual')) lA += vUSD;
-                else lR += vUSD;
-            });
-            portafolioUSD.forEach((item, i) => {
-                const pct = pUSD > 0 ? ((item.v / pUSD) * 100).toFixed(1) : "0.0";
-                const el = document.getElementById(`share-usd-${i}`); if (el) el.innerText = `${pct}%`;
-                if (item.l.includes('Inmediata')) lI += item.v;
-                else if (item.l.includes('24 hs')) l24 += item.v;
-                else if (item.l.includes('Annual')) lA += item.v;
-                else lR += item.v;
-            });
-
-            const fmt = (v, m) => '$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + m;
-            document.getElementById('resumen-total').innerText = fmt(pUSD, 'USD');
-            document.getElementById('resumen-mxn').innerText   = fmt(pMXN, 'MXN');
-            document.getElementById('resumen-usd').innerText   = fmt(uS,   'USD');
-            document.getElementById('total-mxn-footer').innerText = fmt(mX, 'MXN');
-            document.getElementById('total-usd-footer').innerText = fmt(uS, 'USD');
-            document.getElementById('val-liq-inmediata').innerText = fmt(lI,  'USD');
-            document.getElementById('val-liq-24h').innerText       = fmt(l24, 'USD');
-            document.getElementById('val-liq-annual').innerText    = fmt(lA,  'USD');
-            document.getElementById('val-liq-retirement').innerText = fmt(lR, 'USD');
-
-            if (pUSD > 0) {
-                document.getElementById('bar-liq-inmediata').style.width  = ((lI  / pUSD) * 100) + '%';
-                document.getElementById('bar-liq-24h').style.width        = ((l24 / pUSD) * 100) + '%';
-                document.getElementById('bar-liq-annual').style.width     = ((lA  / pUSD) * 100) + '%';
-                document.getElementById('bar-liq-retirement').style.width = ((lR  / pUSD) * 100) + '%';
-            } else {
-                document.querySelectorAll('.bar-fill').forEach(b => b.style.width = '0%');
-            }
-        }
-
-        // ── Tipo de cambio real ──────────────────────────────────────────────────
-        async function obtenerTipoCambioReal() {
-            try {
-                // ✅ BUG FIX: URL correcta de la API
-                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                const data = await res.json();
-                if (data && data.rates && data.rates.MXN) {
-                    document.getElementById('tc').value = parseFloat(data.rates.MXN).toFixed(2);
-                    calcularTodo();
-                }
-            } catch (e) { /* Silencioso: usa el valor manual */ }
-        }
-
-        // ── Sincronización con JSONBin.io ────────────────────────────────────────
-        async function descargarDesdeNube() {
-            const ind = document.getElementById('cloud-indicator');
-            if (!nubeConfigurada()) {
-                ind.innerText = "☁️ Sin configurar"; ind.style.color = "#888";
-                cargarListas(); calcularTodo();
-                abrirConfigModal();
-                return;
-            }
-            const { binId, apiKey } = getConfig();
-            ind.innerText = "⏳ Cargando..."; ind.style.color = "#eab308";
-            try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                    headers: { 'X-Master-Key': apiKey }
-                });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                const d = data.record;
-                if (d && d.valores_mxn && d.valores_mxn.length > 0) {
-                    document.getElementById('tc').value = d.tipo_cambio || 18;
-                    portafolioMXN = d.valores_mxn;
-                    portafolioUSD = d.valores_usd;
-                }
-                ind.innerText = "☁️ Sincronizado"; ind.style.color = "#b38728";
-                cargarListas(); calcularTodo();
-            } catch (e) {
-                ind.innerText = "❌ Error de nube"; ind.style.color = "#ef4444";
-                cargarListas(); calcularTodo();
-                console.error('Error de sincronización:', e);
-            }
-        }
-
-        function planearSincronizacion() {
-            const ind = document.getElementById('cloud-indicator');
-            ind.innerText = "⏳ Guardando..."; ind.style.color = "#eab308";
-            clearTimeout(timerSincronizacion);
-            timerSincronizacion = setTimeout(sincronizarNube, 1500);
-        }
-
-        async function sincronizarNube() {
-            const ind = document.getElementById('cloud-indicator');
-            if (!nubeConfigurada()) { ind.innerText = "☁️ Sin configurar"; ind.style.color = "#888"; return; }
-            const { binId, apiKey } = getConfig();
-            try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json", "X-Master-Key": apiKey },
-                    body: JSON.stringify({
-                        valores_mxn: portafolioMXN,
-                        valores_usd: portafolioUSD,
-                        tipo_cambio: parseFloat(document.getElementById('tc').value) || 18,
-                        updated_at: new Date().toISOString()
-                    })
-                });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                ind.innerText = "☁️ Sincronizado"; ind.style.color = "#b38728";
-            } catch (e) {
-                ind.innerText = "❌ Error"; ind.style.color = "#ef4444";
-                console.error('Error al guardar:', e);
-            }
-        }
-
-        // ── Historial Undo / Redo ────────────────────────────────────────────────
-        function registrarCambio() {
-            if (bloqueandoHistorial) return;
-            const snap = {
-                mxn: JSON.parse(JSON.stringify(portafolioMXN)),
-                usd: JSON.parse(JSON.stringify(portafolioUSD)),
-                tc: document.getElementById('tc').value
-            };
-            if (indiceHistorial < historialEstados.length - 1)
-                historialEstados = historialEstados.slice(0, indiceHistorial + 1);
-            historialEstados.push(JSON.stringify(snap));
-            indiceHistorial++;
-            document.getElementById('btn-undo').disabled = (indiceHistorial <= 0);
-            document.getElementById('btn-redo').disabled = (indiceHistorial >= historialEstados.length - 1);
-        }
-
-        function ejecutarUndo() {
-            if (indiceHistorial > 0) {
-                indiceHistorial--;
-                aplicarEstado(historialEstados[indiceHistorial]);
-                planearSincronizacion();
-            }
-        }
-
-        function ejecutarRedo() {
-            if (indiceHistorial < historialEstados.length - 1) {
-                indiceHistorial++; // ✅ BUG FIX: era historialEstados++ (incorrecto)
-                aplicarEstado(historialEstados[indiceHistorial]);
-                planearSincronizacion();
-            }
-        }
-
-        function aplicarEstado(raw) {
-            bloqueandoHistorial = true;
-            const s = JSON.parse(raw);
-            document.getElementById('tc').value = s.tc;
-            portafolioMXN = s.mxn; portafolioUSD = s.usd;
-            cargarListas(); calcularTodo();
-            bloqueandoHistorial = false;
-            document.getElementById('btn-undo').disabled = (indiceHistorial <= 0);
-            document.getElementById('btn-redo').disabled = (indiceHistorial >= historialEstados.length - 1);
-        }
-
-        // ── Init ─────────────────────────────────────────────────────────────────
-        window.onload = function () {
-            cargarListas();
-            calcularTodo();
-            descargarDesdeNube()
-                .then(() => obtenerTipoCambioReal())
-                .then(() => setTimeout(registrarCambio, 500));
-        };
-    </script>
+                autoSnapshotSiCambioMes(); // auto-registro si es mes nuevo
+                renderChart();
+            }, 600);
+        });
+    window.addEventListener('resize', () => renderChart());
+};
+</script>
 </body>
 </html>
