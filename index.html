@@ -25,23 +25,12 @@
             margin-bottom: 1.1rem; border-radius: 10px; flex-wrap: wrap; gap: 0.65rem;
             box-shadow: 0 6px 32px rgba(179,135,40,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
         }
-        .logo-wrap { display: flex; align-items: center; gap: 0.8rem; }
-        .logo-badge {
-            width: 46px; height: 46px; border-radius: 10px; position: relative;
-            background: linear-gradient(145deg, #f5d060 0%, #e8b830 18%, #c89a20 38%, #a07818 55%, #c8a030 72%, #e8c840 88%, #f0d868 100%);
-            box-shadow: 0 2px 12px rgba(179,135,40,0.5), inset 0 1px 0 rgba(255,255,235,0.5), inset 0 -1px 0 rgba(0,0,0,0.3);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+        .logo-wrap { display: flex; align-items: center; }
+        .logo-icon-img {
+            width: 52px; height: 52px; border-radius: 13px; display: block;
+            box-shadow: 0 4px 18px rgba(179,135,40,0.22), inset 0 1px 0 rgba(255,255,255,0.04);
         }
-        .logo-badge::before { content:''; position:absolute; top:0; left:0; right:0; height:55%;
-            background: linear-gradient(180deg, rgba(255,255,220,0.28) 0%, transparent 100%); border-radius:10px 10px 0 0; }
-        .logo-badge::after { content:''; position:absolute; top:2px; left:5px; right:5px; height:1px; background:rgba(255,255,220,0.45); }
-        .logo-pc-text { font-weight:900; font-size:1.3rem; letter-spacing:-0.02em; position:relative; z-index:1;
-            color:rgba(40,25,0,0.85); text-shadow:0 1px 0 rgba(255,240,160,0.5); }
-        .logo-text { display:flex; flex-direction:column; line-height:1.15; }
-        .logo-name { font-weight:900; font-size:1.1rem; letter-spacing:0.03em;
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 50%, var(--gold-mid) 100%);
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .logo-sub { font-size:0.45rem; font-weight:700; letter-spacing:0.38em; color:#444; text-transform:uppercase; }
+
 
         .date-badge { font-size:0.62rem; color:#555; font-weight:600; letter-spacing:0.04em;
             padding:0.3rem 0.65rem; background:#0c0c0c; border:1px solid #1c1c1c; border-radius:5px; white-space:nowrap; }
@@ -190,7 +179,6 @@
         [data-theme="light"] body { background:#f6f1e2; color:#221c10; }
         [data-theme="light"] header { background: linear-gradient(160deg,#ffffff 0%,#f2ead0 100%);
             border-color:#e6dcc0; box-shadow:0 6px 24px rgba(179,135,40,0.12), inset 0 1px 0 rgba(255,255,255,0.6); }
-        [data-theme="light"] .logo-sub { color:#a89a6e; }
         [data-theme="light"] .date-badge { background:#fff; border-color:#e6dcc0; color:#8a8060; }
         [data-theme="light"] .btn { background: linear-gradient(180deg,#fff 0%,#f1e9d3 100%); border-color:#ddd0a6; color:#6b6044; }
         [data-theme="light"] .btn-gold { background: linear-gradient(180deg,#fff6da 0%,#f3e2ab 100%); border-color:#cdb05a; color:#8a6a12; }
@@ -247,11 +235,7 @@
 
 <header>
     <div class="logo-wrap">
-        <div class="logo-badge"><span class="logo-pc-text">PC</span></div>
-        <div class="logo-text">
-            <span class="logo-name">PC Capital</span>
-            <span class="logo-sub">Patrimonio · Live</span>
-        </div>
+        <img src="icon-180.png" alt="PC Capital" class="logo-icon-img">
     </div>
 
     <div id="date-badge" class="date-badge">—</div>
@@ -380,6 +364,28 @@
     <div class="container">
 
         <section class="chart-box">
+            <div class="chart-hdr">
+                <div class="chart-hdr-left">
+                    <div class="section-title" style="margin:0;">🎯 Meta Patrimonial</div>
+                    <div class="chart-period" id="meta-sub">Calculando…</div>
+                </div>
+                <button class="btn btn-gold" onclick="editarMeta()" style="font-size:0.6rem; align-self:flex-start;">✏️ Editar meta</button>
+            </div>
+            <div style="margin-top:0.4rem;">
+                <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#777; margin-bottom:0.35rem;">
+                    <span id="meta-actual">$ 0</span><span id="meta-objetivo">$ 0</span>
+                </div>
+                <div class="bar-bg" style="height:10px;"><div id="meta-bar-fill" class="bar-fill" style="height:100%;"></div></div>
+                <div style="text-align:center; font-size:0.7rem; color:var(--gold-mid); margin-top:0.5rem; font-weight:700;" id="meta-pct">0%</div>
+            </div>
+        </section>
+
+        <section class="chart-box">
+            <div class="section-title" style="margin-bottom:0.9rem;">🏆 Top 5 Cuentas</div>
+            <div id="ranking-rows"></div>
+        </section>
+
+        <section class="chart-box">
             <div class="section-title" style="margin-bottom:1rem;">🥇 Distribución por Moneda</div>
             <div class="donut-row">
                 <svg id="donut-currency" width="150" height="150" viewBox="0 0 150 150"></svg>
@@ -406,6 +412,7 @@
                 <div class="chart-empty" id="proyeccion-empty" style="display:none;">
                     Necesitás al menos 2 meses de historial freezado para proyectar
                 </div>
+
                 <svg id="proyeccion-chart" style="display:none;" height="180"></svg>
             </div>
             <div style="font-size:0.56rem;color:#333;margin-top:0.5rem;text-align:center;">La línea punteada es una proyección estimada, no garantizada</div>
@@ -451,7 +458,7 @@ function goToPage(i) {
     currentPage = i;
     document.getElementById('pages-track').style.transform = `translateX(-${i*50}%)`;
     document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
-    if (i===1) { renderDonuts(); renderProyeccion(); }
+    if (i===1) { renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); }
 }
 (function initSwipe() {
     const vp = document.getElementById('pages-viewport');
@@ -520,6 +527,8 @@ const HISTORIAL_BASE = [{ mes: "2026-04", total: 616081 }];
 let historialMensual = [...HISTORIAL_BASE];
 let historialEstados=[], indiceHistorial=-1, bloqueandoHistorial=false, timerSincronizacion;
 let ultimoCalculo = {};
+let metaPatrimonio = null;
+let datosListos = false;
 let chartDataMain = {points:[], W:0, H:0};
 let chartDataProy = {points:[], W:0, H:0};
 
@@ -653,6 +662,8 @@ function calcularTodo() {
     renderChart();
     renderProyeccion();
     renderDonuts();
+    renderMeta();
+    renderRanking();
 }
 
 // ── Gráfico tipo acciones (Evolución) ──────────────────────────────────────
@@ -923,6 +934,98 @@ function renderLegend(containerId, segments, total) {
         </div>`;
     }).join('');
 }
+// ── Meta Patrimonial (largo plazo, 10+ años) ────────────────────────────────
+function sugerirMeta() {
+    const total = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : totalActualUSD();
+    const currentYear = new Date().getFullYear();
+    const frozen = historialMensual.filter(h => h.mes < mesActual());
+    let annualRate = 0.0718;
+    if (frozen.length >= 2) {
+        const n = frozen.length;
+        const xs = frozen.map((_,i)=>i), ys = frozen.map(d=>d.total);
+        const xMean = xs.reduce((a,b)=>a+b,0)/n, yMean = ys.reduce((a,b)=>a+b,0)/n;
+        let num=0, den=0;
+        for (let i=0;i<n;i++){ num+=(xs[i]-xMean)*(ys[i]-yMean); den+=(xs[i]-xMean)**2; }
+        const slope = den!==0 ? num/den : 0;
+        if (yMean>0) {
+            const candidate = Math.pow(1+(slope/yMean), 12)-1;
+            if (candidate>0.03 && candidate<0.15) annualRate = candidate;
+        }
+    }
+    const years=10;
+    const base = total>0 ? total : 100000;
+    const goal = base * Math.pow(1+annualRate, years);
+    return { amount: Math.round(goal/1000)*1000, year: currentYear+years, custom:false };
+}
+function renderMeta() {
+    if (!metaPatrimonio) {
+        if (!datosListos) {
+            const elS=document.getElementById('meta-sub');
+            if (elS) elS.innerText = 'Cargando…';
+            return;
+        }
+        metaPatrimonio = sugerirMeta();
+        planearSincronizacion();
+    }
+    const total = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0;
+    const pctVal = metaPatrimonio.amount>0 ? Math.min(100, (total/metaPatrimonio.amount*100)) : 0;
+    const elA=document.getElementById('meta-actual'), elO=document.getElementById('meta-objetivo');
+    const elB=document.getElementById('meta-bar-fill'), elP=document.getElementById('meta-pct'), elS=document.getElementById('meta-sub');
+    if (!elA) return;
+    elA.innerText = fmtN(total,'USD');
+    elO.innerText = '$ '+Math.round(metaPatrimonio.amount).toLocaleString('en-US')+' USD ('+metaPatrimonio.year+')';
+    elB.style.width = pctVal.toFixed(1)+'%';
+    elP.innerText = pctVal.toFixed(1)+'% alcanzado';
+    const yearsLeft = metaPatrimonio.year - new Date().getFullYear();
+    elS.innerText = metaPatrimonio.custom
+        ? `Meta personalizada · ${yearsLeft} años restantes`
+        : `Sugerencia automática · ${yearsLeft} años restantes (editable)`;
+}
+function editarMeta() {
+    const cur = metaPatrimonio || sugerirMeta();
+    const amountStr = prompt('Meta de patrimonio total en USD:', Math.round(cur.amount));
+    if (!amountStr) return;
+    const amount = parseInt(amountStr.replace(/[^0-9]/g,'')) || 0;
+    if (amount<=0) { alert('Monto inválido.'); return; }
+    const minYear = new Date().getFullYear()+10;
+    const yearStr = prompt(`Año objetivo (mínimo ${minYear}, pensado a largo plazo):`, Math.max(cur.year, minYear));
+    let year = parseInt(yearStr) || minYear;
+    if (year < minYear) { alert(`El año debe ser ${minYear} o posterior (mínimo 10 años a futuro). Se ajustó automáticamente.`); year = minYear; }
+    metaPatrimonio = { amount, year, custom:true };
+    renderMeta();
+    planearSincronizacion();
+}
+
+// ── Ranking de cuentas (Top 5) ───────────────────────────────────────────────
+function renderRanking() {
+    const el = document.getElementById('ranking-rows');
+    if (!el) return;
+    const tc = (ultimoCalculo && ultimoCalculo.tc) ? ultimoCalculo.tc : (parseFloat(document.getElementById('tc').value)||1);
+    const total = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0;
+    const combined = [
+        ...portafolioMXN.map(it => ({ name: it.c, plat: it.p, usd: it.v / tc })),
+        ...portafolioUSD.map(it => ({ name: it.c, plat: it.p, usd: it.v }))
+    ].filter(it => it.usd > 0.01).sort((a,b) => b.usd - a.usd).slice(0,5);
+
+    if (combined.length === 0) {
+        el.innerHTML = '<div class="chart-empty" style="padding:1.2rem;">Todavía no hay cuentas con saldo</div>';
+        return;
+    }
+    const max = combined[0].usd;
+    el.innerHTML = combined.map((it,i) => {
+        const pctBar = (it.usd/max*100).toFixed(1);
+        const pctTotal = total>0 ? (it.usd/total*100).toFixed(1) : '0.0';
+        return `<div style="margin-bottom:0.7rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.68rem; margin-bottom:0.28rem; gap:0.5rem;">
+                <span style="color:#999; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${i+1}. ${it.name} <span style="color:#444; font-weight:400;">· ${it.plat}</span></span>
+                <span style="font-family:monospace; color:#e5c158; font-weight:700; flex-shrink:0;">$${Math.round(it.usd).toLocaleString('en-US')}</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${pctBar}%;"></div></div>
+            <div style="font-size:0.56rem; color:#3a3a3a; margin-top:0.2rem; text-align:right;">${pctTotal}% del patrimonio</div>
+        </div>`;
+    }).join('');
+}
+
 function renderDonuts() {
     const u = ultimoCalculo;
     if (!u || u.pUSD===undefined) return;
@@ -1012,6 +1115,7 @@ async function descargarDesdeNube() {
             const baseExtra=HISTORIAL_BASE.filter(h=>!cloudMonths.has(h.mes));
             historialMensual=[...baseExtra,...d.historial_mensual].sort((a,b)=>a.mes.localeCompare(b.mes));
         }
+        if (d?.meta_patrimonio) { metaPatrimonio = d.meta_patrimonio; }
         ind.innerText="☁️ Sync"; ind.style.color="#b38728";
         cargarListas(); calcularTodo();
     } catch(e) {
@@ -1038,6 +1142,7 @@ async function sincronizarNube() {
                 valores_mxn:portafolioMXN, valores_usd:portafolioUSD,
                 tipo_cambio:parseFloat(document.getElementById('tc').value)||18,
                 historial_mensual:historialMensual,
+                meta_patrimonio:metaPatrimonio,
                 updated_at:new Date().toISOString()
             })
         });
@@ -1137,7 +1242,8 @@ window.onload = function() {
             setTimeout(() => {
                 registrarCambio();
                 autoFreezeAlCambiarMes();
-                renderChart(); renderProyeccion(); renderDonuts();
+                datosListos = true;
+                renderChart(); renderProyeccion(); renderDonuts(); renderMeta(); renderRanking();
             }, 600);
         });
     attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
