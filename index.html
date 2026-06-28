@@ -4,216 +4,228 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PC Capital - Live Dashboard</title>
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="icon" type="image/png" href="icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PC Capital">
+    <meta name="theme-color" content="#0d0d0d">
     <style>
         :root {
             --gold-dark: #7a5c1e; --gold-mid: #b38728; --gold-bright: #e5c158; --gold-light: #fcf6ba;
             --silver-mid: #9ca3af; --bg-0: #030303; --bg-1: #0a0a0a; --bg-2: #111; --border: #1e1e1e;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, 'SF Pro Display', sans-serif; }
-        body { background: var(--bg-0); color: #fff; padding: 1.25rem; padding-bottom: 3rem; }
+        body { background: var(--bg-0); color: #fff; padding: 1.25rem; padding-bottom: 3rem; transition: background .25s, color .25s; }
 
-        /* ── Header ── */
         header {
             background: linear-gradient(160deg, #181818 0%, #0d0d0d 100%);
             border: 1px solid #252525; border-bottom: 2px solid var(--gold-mid);
             padding: 0.9rem 1.25rem; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 1.75rem; border-radius: 10px; flex-wrap: wrap; gap: 0.65rem;
+            margin-bottom: 1.1rem; border-radius: 10px; flex-wrap: wrap; gap: 0.65rem;
             box-shadow: 0 6px 32px rgba(179,135,40,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
         }
-
-        /* ── Logo ── */
         .logo-wrap { display: flex; align-items: center; gap: 0.8rem; }
         .logo-badge {
             width: 46px; height: 46px; border-radius: 10px; position: relative;
             background: linear-gradient(145deg, #f5d060 0%, #e8b830 18%, #c89a20 38%, #a07818 55%, #c8a030 72%, #e8c840 88%, #f0d868 100%);
             box-shadow: 0 2px 12px rgba(179,135,40,0.5), inset 0 1px 0 rgba(255,255,235,0.5), inset 0 -1px 0 rgba(0,0,0,0.3);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            overflow: hidden;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
         }
-        .logo-badge::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 55%;
-            background: linear-gradient(180deg, rgba(255,255,220,0.28) 0%, transparent 100%);
-            border-radius: 10px 10px 0 0;
-        }
-        .logo-badge::after {
-            content: ''; position: absolute; top: 2px; left: 5px; right: 5px; height: 1px;
-            background: rgba(255,255,220,0.45);
-        }
-        .logo-pc-text {
-            font-weight: 900; font-size: 1.3rem; letter-spacing: -0.02em; position: relative; z-index:1;
-            color: rgba(40,25,0,0.85); text-shadow: 0 1px 0 rgba(255,240,160,0.5);
-        }
-        .logo-text { display: flex; flex-direction: column; line-height: 1.15; }
-        .logo-name {
-            font-weight: 900; font-size: 1.1rem; letter-spacing: 0.03em;
+        .logo-badge::before { content:''; position:absolute; top:0; left:0; right:0; height:55%;
+            background: linear-gradient(180deg, rgba(255,255,220,0.28) 0%, transparent 100%); border-radius:10px 10px 0 0; }
+        .logo-badge::after { content:''; position:absolute; top:2px; left:5px; right:5px; height:1px; background:rgba(255,255,220,0.45); }
+        .logo-pc-text { font-weight:900; font-size:1.3rem; letter-spacing:-0.02em; position:relative; z-index:1;
+            color:rgba(40,25,0,0.85); text-shadow:0 1px 0 rgba(255,240,160,0.5); }
+        .logo-text { display:flex; flex-direction:column; line-height:1.15; }
+        .logo-name { font-weight:900; font-size:1.1rem; letter-spacing:0.03em;
             background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 50%, var(--gold-mid) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .logo-sub { font-size: 0.45rem; font-weight: 700; letter-spacing: 0.38em; color: #444; text-transform: uppercase; }
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .logo-sub { font-size:0.45rem; font-weight:700; letter-spacing:0.38em; color:#444; text-transform:uppercase; }
 
-        /* ── Date badge ── */
-        .date-badge {
-            font-size: 0.62rem; color: #555; font-weight: 600; letter-spacing: 0.04em;
-            padding: 0.3rem 0.65rem; background: #0c0c0c; border: 1px solid #1c1c1c;
-            border-radius: 5px; white-space: nowrap;
-        }
+        .date-badge { font-size:0.62rem; color:#555; font-weight:600; letter-spacing:0.04em;
+            padding:0.3rem 0.65rem; background:#0c0c0c; border:1px solid #1c1c1c; border-radius:5px; white-space:nowrap; }
         .date-badge span { color: var(--gold-mid); }
 
-        /* ── Toolbar ── */
-        .toolbar { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
-        .btn {
-            background: linear-gradient(180deg, #1e1e1e 0%, #111 100%);
-            border: 1px solid #2a2a2a; color: #999; font-size: 0.67rem; font-weight: 700;
-            padding: 0.45rem 0.65rem; border-radius: 5px; cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-        }
-        .btn:disabled { opacity: 0.28; cursor: default; }
-        .btn-gold {
-            border: 1px solid #3a2a08; color: var(--gold-bright);
-            background: linear-gradient(180deg, #1c1508 0%, #0c0a04 100%);
-        }
-        .cloud-status {
-            font-size: 0.63rem; font-weight: bold; padding: 0.4rem 0.65rem;
-            border-radius: 5px; background: #0c0c0c; border: 1px solid #1c1c1c; white-space: nowrap;
-        }
-        .tc-box {
-            background: #0c0c0c; border: 1px solid #222; padding: 0.38rem 0.7rem;
-            border-radius: 6px; font-size: 0.67rem; color: #444;
-        }
-        .tc-box input {
-            background: transparent; border: none; color: var(--gold-bright);
-            font-weight: 800; font-size: 1rem; width: 58px; text-align: right; outline: none;
-        }
+        .toolbar { display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; }
+        .btn { background: linear-gradient(180deg, #1e1e1e 0%, #111 100%); border:1px solid #2a2a2a; color:#999;
+            font-size:0.67rem; font-weight:700; padding:0.45rem 0.6rem; border-radius:5px; cursor:pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+        .btn:disabled { opacity:0.28; cursor:default; }
+        .btn-gold { border:1px solid #3a2a08; color:var(--gold-bright); background: linear-gradient(180deg, #1c1508 0%, #0c0a04 100%); }
+        .cloud-status { font-size:0.63rem; font-weight:bold; padding:0.4rem 0.6rem; border-radius:5px;
+            background:#0c0c0c; border:1px solid #1c1c1c; white-space:nowrap; }
+        .tc-box { background:#0c0c0c; border:1px solid #222; padding:0.38rem 0.7rem; border-radius:6px; font-size:0.67rem; color:#444; }
+        .tc-box input { background:transparent; border:none; color:var(--gold-bright); font-weight:800; font-size:1rem; width:58px; text-align:right; outline:none; }
+
+        /* ── Pager (swipe entre vistas) ── */
+        .pager-dots { display:flex; justify-content:center; gap:0.4rem; margin-bottom:0.9rem; }
+        .dot { width:6px; height:6px; border-radius:50%; background:#2a2a2a; cursor:pointer; transition:background .2s, width .2s; }
+        .dot.active { background:var(--gold-mid); width:18px; border-radius:3px; }
+        .pages-viewport { overflow:hidden; }
+        .pages-track { display:flex; width:200%; transition: transform 0.35s cubic-bezier(.4,0,.2,1); }
+        .page-slide { width:50%; flex-shrink:0; min-width:0; }
 
         /* ── Cards ── */
-        .grid-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; margin-bottom: 1.75rem; }
-        .card {
-            padding: 1.1rem 1.25rem; border-radius: 8px;
-            background: linear-gradient(145deg, #131313 0%, #0c0c0c 100%);
-            border: 1px solid var(--border); position: relative; overflow: hidden;
-        }
-        .card::before {
-            content:''; position:absolute; top:0; left:0; right:0; height:1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-        }
-        .card-main {
-            border-left: 3px solid var(--gold-mid);
-            background: linear-gradient(145deg, #1c150a 0%, #100d06 60%, #0a0806 100%);
-            box-shadow: 0 4px 20px rgba(179,135,40,0.08);
-        }
-        .card-mxn { border-left: 3px solid #22c55e; }
-        .card-usd { border-left: 3px solid #60a5fa; }
-        .card-flag { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1; }
-        .card-title { font-size: 0.57rem; font-weight: 700; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.12em; }
-        .card-val {
-            font-size: 1.4rem; font-weight: 900; margin-top: 0.4rem; font-family: 'SF Mono', monospace;
-            background: linear-gradient(180deg, #e8e8e8 0%, #aaa 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .card-main .card-val {
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .card-share { font-size: 0.6rem; color: #3a3a3a; margin-top: 0.35rem; font-weight: 600; }
+        .grid-sum { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.9rem; margin-bottom:1.75rem; }
+        .card { padding:1.1rem 1.25rem; border-radius:8px; background: linear-gradient(145deg, #131313 0%, #0c0c0c 100%);
+            border:1px solid var(--border); position:relative; overflow:hidden; }
+        .card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); }
+        .card-main { border-left:3px solid var(--gold-mid); background: linear-gradient(145deg, #1c150a 0%, #100d06 60%, #0a0806 100%);
+            box-shadow: 0 4px 20px rgba(179,135,40,0.08); }
+        .card-mxn { border-left:3px solid #22c55e; }
+        .card-usd { border-left:3px solid #60a5fa; }
+        .card-flag { font-size:1.2rem; margin-bottom:0.15rem; line-height:1; }
+        .card-title { font-size:0.57rem; font-weight:700; color:#3a3a3a; text-transform:uppercase; letter-spacing:0.12em; }
+        .card-val { font-size:1.4rem; font-weight:900; margin-top:0.4rem; font-family:'SF Mono', monospace;
+            background: linear-gradient(180deg, #e8e8e8 0%, #aaa 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .card-main .card-val { background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .card-share { font-size:0.6rem; color:#3a3a3a; margin-top:0.35rem; font-weight:600; }
 
         /* ── Liquidity ── */
-        .liq-box {
-            background: #0a0a0a; border: 1px solid var(--border);
-            border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem;
-        }
-        .section-title { font-size: 0.58rem; color: var(--gold-mid); margin-bottom: 0.9rem; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; }
-        .bar-wrapper { margin-bottom: 0.75rem; }
-        .bar-info { display: flex; justify-content: space-between; font-size: 0.66rem; color: #666; margin-bottom: 0.28rem; }
-        .bar-bg { background: #0d0d0d; height: 5px; border-radius: 3px; border: 1px solid #181818; }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.5s cubic-bezier(.4,0,.2,1);
-            background: linear-gradient(90deg, var(--gold-dark), var(--gold-bright), var(--gold-light)); border-radius: 3px; }
+        .liq-box { background:#0a0a0a; border:1px solid var(--border); border-radius:8px; padding:1.1rem 1.25rem; margin-bottom:1.75rem; }
+        .section-title { font-size:0.58rem; color:var(--gold-mid); margin-bottom:0.9rem; text-transform:uppercase; letter-spacing:0.16em; font-weight:700; }
+        .bar-wrapper { margin-bottom:0.75rem; }
+        .bar-info { display:flex; justify-content:space-between; font-size:0.66rem; color:#666; margin-bottom:0.28rem; }
+        .bar-bg { background:#0d0d0d; height:5px; border-radius:3px; border:1px solid #181818; }
+        .bar-fill { height:100%; width:0%; transition:width .5s cubic-bezier(.4,0,.2,1);
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-bright), var(--gold-light)); border-radius:3px; }
 
-        /* ── Chart ── */
-        .chart-box {
-            background: #0a0a0a; border: 1px solid var(--border);
-            border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem;
-        }
-        .chart-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.9rem; flex-wrap: wrap; gap: 0.5rem; }
-        .chart-hdr-left { display: flex; flex-direction: column; gap: 0.25rem; }
-        .chart-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        .chart-val { font-size: 1.3rem; font-weight: 900; font-family: monospace;
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .chart-chg { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
-        .chart-chg.pos { background: rgba(34,197,94,0.12); color: #22c55e; }
-        .chart-chg.neg { background: rgba(239,68,68,0.12); color: #ef4444; }
-        .chart-chg.neu { background: rgba(156,163,175,0.1); color: #9ca3af; }
-        .chart-period { font-size: 0.58rem; color: #3a3a3a; }
-        .chart-empty { text-align: center; color: #2a2a2a; font-size: 0.7rem; padding: 2.5rem 1rem; line-height: 1.9; }
-        #evolucion-chart { width: 100%; display: block; overflow: visible; }
+        /* ── Chart boxes ── */
+        .chart-box { background:#0a0a0a; border:1px solid var(--border); border-radius:8px; padding:1.1rem 1.25rem; margin-bottom:1.75rem; }
+        .chart-hdr { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.9rem; flex-wrap:wrap; gap:0.5rem; }
+        .chart-hdr-left { display:flex; flex-direction:column; gap:0.25rem; }
+        .chart-meta { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+        .chart-val { font-size:1.3rem; font-weight:900; font-family:monospace;
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-bright) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .chart-chg { font-size:0.72rem; font-weight:700; padding:0.2rem 0.5rem; border-radius:4px; }
+        .chart-chg.pos { background:rgba(34,197,94,0.12); color:#22c55e; }
+        .chart-chg.neg { background:rgba(239,68,68,0.12); color:#ef4444; }
+        .chart-chg.neu { background:rgba(156,163,175,0.1); color:#9ca3af; }
+        .chart-period { font-size:0.58rem; color:#3a3a3a; }
+        .chart-empty { text-align:center; color:#2a2a2a; font-size:0.7rem; padding:2.5rem 1rem; line-height:1.9; }
+        #evolucion-chart, #proyeccion-chart { width:100%; display:block; overflow:visible; }
+
+        /* ── Tooltip flotante en gráficos ── */
+        .chart-tooltip { position:absolute; top:4px; transform:translateX(-50%); background:#000; border:1px solid #b38728;
+            border-radius:5px; padding:0.32rem 0.55rem; font-size:0.64rem; color:#eee; white-space:nowrap;
+            pointer-events:none; display:none; z-index:6; box-shadow:0 4px 14px rgba(0,0,0,0.5); line-height:1.4; }
+        .chart-tooltip strong { color:#e5c158; }
+
+        /* ── Donuts / Legends (vista Analytics) ── */
+        .donut-row { display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap; }
+        .legend-row { display:flex; align-items:center; gap:0.4rem; font-size:0.66rem; margin-bottom:0.32rem; }
+        .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .legend-label { flex-grow:1; color:#888; }
+        .legend-pct { font-family:monospace; font-weight:700; color:#ccc; }
 
         /* ── Tables ── */
-        .grid-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1.25rem; }
-        .table-box { background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.25rem; }
-        .table-hdr { display: flex; justify-content: space-between; align-items: flex-start;
-            border-bottom: 1px solid var(--border); padding-bottom: 0.7rem; margin-bottom: 0.9rem; }
-        .table-hdr-left { display: flex; flex-direction: column; gap: 0.2rem; }
-        .table-hdr-title { font-weight: 900; font-size: 0.82rem; }
-        .table-hdr-share { font-size: 0.57rem; color: #3a3a3a; font-weight: 600; }
-        .table-hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.18rem; }
-        .table-hdr-total { font-weight: 900; font-size: 0.88rem; font-family: monospace; }
-        .table-hdr-sub { font-size: 0.57rem; color: var(--gold-mid); font-weight: 700; }
-        .border-gold { border-top: 3px solid var(--gold-mid); }
-        .border-blue  { border-top: 3px solid #60a5fa; }
-        .account-rows { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.9rem; }
-        .row-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%);
-            padding: 0.55rem; border-radius: 6px; border: 1px solid #1a1a1a; gap: 0.45rem;
-        }
-        .meta-container { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
-        .input-inline { background: transparent; border: none; color: #ddd; font-size: 0.78rem; font-weight: 700; outline: none; width: 100%; }
-        .meta-details { font-size: 0.58rem; color: #444; display: flex; gap: 0.28rem; align-items: center; margin-top: 0.18rem; flex-wrap: wrap; }
-        .input-sub { font-size: 0.58rem; color: #555; background: transparent; border: none; outline: none; width: 62px; }
-        .select-liq { background: #111; color: #555; font-size: 0.56rem; border: 1px solid #1e1e1e; padding: 0.1rem; outline: none; border-radius: 3px; }
-        .share-badge { font-family: monospace; color: var(--gold-mid); font-weight: bold; font-size: 0.58rem; }
-        .row-actions { display: flex; gap: 0.18rem; flex-shrink: 0; }
-        .btn-mini { background: transparent; border: none; color: #2e2e2e; font-size: 0.62rem; cursor: pointer; font-weight: bold; padding: 0.1rem; }
-        .btn-mini:hover { color: #ccc; }
-        .input-box {
-            background: #0c0c0c; border: 1px solid #242424; border-radius: 5px;
-            padding: 0.32rem 0.45rem; display: flex; align-items: center; width: 128px; min-width: 128px;
-        }
-        .input-box span { font-size: 0.7rem; color: #2e2e2e; margin-right: 0.12rem; }
-        .input-box input { background: transparent; border: none; width: 100%; text-align: right;
-            color: #ddd; font-weight: 700; outline: none; font-family: monospace; font-size: 0.82rem; }
-        .btn-add { width: 100%; background: transparent; border: 1px dashed #1e1e1e; color: #333;
-            font-size: 0.66rem; font-weight: bold; padding: 0.45rem; border-radius: 5px; cursor: pointer; }
-        .btn-add:hover { border-color: var(--gold-mid); color: var(--gold-bright); }
+        .grid-tables { display:grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap:1.25rem; }
+        .table-box { background:#0a0a0a; border:1px solid var(--border); border-radius:8px; padding:1.1rem 1.25rem; }
+        .table-hdr { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border);
+            padding-bottom:0.7rem; margin-bottom:0.9rem; }
+        .table-hdr-left { display:flex; flex-direction:column; gap:0.2rem; }
+        .table-hdr-title { font-weight:900; font-size:0.82rem; }
+        .table-hdr-share { font-size:0.57rem; color:#3a3a3a; font-weight:600; }
+        .table-hdr-right { display:flex; flex-direction:column; align-items:flex-end; gap:0.18rem; }
+        .table-hdr-total { font-weight:900; font-size:0.88rem; font-family:monospace; }
+        .table-hdr-sub { font-size:0.57rem; color:var(--gold-mid); font-weight:700; }
+        .border-gold { border-top:3px solid var(--gold-mid); }
+        .border-blue { border-top:3px solid #60a5fa; }
+        .account-rows { display:flex; flex-direction:column; gap:0.45rem; margin-bottom:0.9rem; }
+        .row-item { display:flex; justify-content:space-between; align-items:center;
+            background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%); padding:0.55rem; border-radius:6px; border:1px solid #1a1a1a; gap:0.45rem; }
+        .meta-container { display:flex; flex-direction:column; flex-grow:1; min-width:0; }
+        .input-inline { background:transparent; border:none; color:#ddd; font-size:0.78rem; font-weight:700; outline:none; width:100%; }
+        .meta-details { font-size:0.58rem; color:#444; display:flex; gap:0.28rem; align-items:center; margin-top:0.18rem; flex-wrap:wrap; }
+        .input-sub { font-size:0.58rem; color:#555; background:transparent; border:none; outline:none; width:62px; }
+        .select-liq { background:#111; color:#555; font-size:0.56rem; border:1px solid #1e1e1e; padding:0.1rem; outline:none; border-radius:3px; }
+        .share-badge { font-family:monospace; color:var(--gold-mid); font-weight:bold; font-size:0.58rem; }
+        .row-actions { display:flex; gap:0.18rem; flex-shrink:0; }
+        .btn-mini { background:transparent; border:none; color:#2e2e2e; font-size:0.62rem; cursor:pointer; font-weight:bold; padding:0.1rem; }
+        .btn-mini:hover { color:#ccc; }
+        .input-box { background:#0c0c0c; border:1px solid #242424; border-radius:5px; padding:0.32rem 0.45rem;
+            display:flex; align-items:center; width:128px; min-width:128px; }
+        .input-box span { font-size:0.7rem; color:#2e2e2e; margin-right:0.12rem; }
+        .input-box input { background:transparent; border:none; width:100%; text-align:right; color:#ddd; font-weight:700;
+            outline:none; font-family:monospace; font-size:0.82rem; }
+        .btn-add { width:100%; background:transparent; border:1px dashed #1e1e1e; color:#333; font-size:0.66rem;
+            font-weight:bold; padding:0.45rem; border-radius:5px; cursor:pointer; }
+        .btn-add:hover { border-color:var(--gold-mid); color:var(--gold-bright); }
 
         /* ── Modal ── */
-        #setup-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 999; align-items: center; justify-content: center; }
-        #setup-modal.visible { display: flex; }
-        .modal-box { background: #111; border: 1px solid var(--gold-mid); border-radius: 10px; padding: 1.75rem; max-width: 450px; width: 92%; }
-        .modal-box h2 { color: var(--gold-bright); font-size: 0.95rem; margin-bottom: 0.9rem; }
-        .modal-box p  { font-size: 0.7rem; color: #888; margin-bottom: 0.7rem; line-height: 1.7; }
-        .modal-box ol { font-size: 0.7rem; color: #888; margin-left: 1.1rem; margin-bottom: 0.9rem; line-height: 2.1; }
-        .modal-box a  { color: var(--gold-bright); }
-        .modal-input { width: 100%; background: #070707; border: 1px solid #2a2a2a; border-radius: 4px;
-            color: #fff; padding: 0.48rem; font-size: 0.76rem; margin-bottom: 0.45rem; outline: none; }
-        .modal-input:focus { border-color: var(--gold-mid); }
-        .btn-modal-save { background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold-mid) 100%);
-            color: #000; font-weight: 900; font-size: 0.78rem; border: none;
-            padding: 0.62rem 1.2rem; border-radius: 5px; cursor: pointer; width: 100%; }
+        #setup-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.93); z-index:999; align-items:center; justify-content:center; }
+        #setup-modal.visible { display:flex; }
+        .modal-box { background:#111; border:1px solid var(--gold-mid); border-radius:10px; padding:1.75rem; max-width:450px; width:92%; }
+        .modal-box h2 { color:var(--gold-bright); font-size:0.95rem; margin-bottom:0.9rem; }
+        .modal-box p { font-size:0.7rem; color:#888; margin-bottom:0.7rem; line-height:1.7; }
+        .modal-box ol { font-size:0.7rem; color:#888; margin-left:1.1rem; margin-bottom:0.9rem; line-height:2.1; }
+        .modal-box a { color:var(--gold-bright); }
+        .modal-input { width:100%; background:#070707; border:1px solid #2a2a2a; border-radius:4px; color:#fff;
+            padding:0.48rem; font-size:0.76rem; margin-bottom:0.45rem; outline:none; }
+        .modal-input:focus { border-color:var(--gold-mid); }
+        .btn-modal-save { background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold-mid) 100%); color:#000;
+            font-weight:900; font-size:0.78rem; border:none; padding:0.62rem 1.2rem; border-radius:5px; cursor:pointer; width:100%; }
 
         /* ── Mobile ── */
         @media (max-width: 500px) {
-            body { padding: 0.65rem; }
-            .row-item { flex-wrap: wrap; }
-            .input-box { width: 100%; min-width: unset; }
-            .input-box input { font-size: 1rem; }
-            .card-val { font-size: 1.15rem; }
-            .chart-val { font-size: 1.05rem; }
-            header { padding: 0.75rem; }
+            body { padding:0.65rem; }
+            .row-item { flex-wrap:wrap; }
+            .input-box { width:100%; min-width:unset; }
+            .input-box input { font-size:1rem; }
+            .card-val { font-size:1.15rem; }
+            .chart-val { font-size:1.05rem; }
+            header { padding:0.75rem; }
+            .donut-row { justify-content:center; }
         }
         @media print {
-            header .toolbar, .input-box, .tc-box, .btn-add, .row-actions, #setup-modal { display: none !important; }
+            header .toolbar, .input-box, .tc-box, .btn-add, .row-actions, #setup-modal, .pager-dots { display:none !important; }
         }
+
+        /* ════════════════════════════════════════════════════════════════
+           MODO CLARO
+        ════════════════════════════════════════════════════════════════ */
+        [data-theme="light"] body { background:#f6f1e2; color:#221c10; }
+        [data-theme="light"] header { background: linear-gradient(160deg,#ffffff 0%,#f2ead0 100%);
+            border-color:#e6dcc0; box-shadow:0 6px 24px rgba(179,135,40,0.12), inset 0 1px 0 rgba(255,255,255,0.6); }
+        [data-theme="light"] .logo-sub { color:#a89a6e; }
+        [data-theme="light"] .date-badge { background:#fff; border-color:#e6dcc0; color:#8a8060; }
+        [data-theme="light"] .btn { background: linear-gradient(180deg,#fff 0%,#f1e9d3 100%); border-color:#ddd0a6; color:#6b6044; }
+        [data-theme="light"] .btn-gold { background: linear-gradient(180deg,#fff6da 0%,#f3e2ab 100%); border-color:#cdb05a; color:#8a6a12; }
+        [data-theme="light"] .cloud-status { background:#fff; border-color:#e6dcc0; }
+        [data-theme="light"] .tc-box { background:#fff; border-color:#e2d6b0; color:#a89a6e; }
+        [data-theme="light"] .dot { background:#ddd0a6; }
+        [data-theme="light"] .dot.active { background:#b38728; }
+        [data-theme="light"] .card { background: linear-gradient(145deg,#ffffff 0%,#fbf5e6 100%); border-color:#ecdfb8; }
+        [data-theme="light"] .card-main { background: linear-gradient(145deg,#fff6de 0%,#fdeeb9 60%,#f7e6a0 100%); box-shadow:0 4px 18px rgba(179,135,40,0.15); }
+        [data-theme="light"] .card-title { color:#a89a6e; }
+        [data-theme="light"] .card-val { background: linear-gradient(180deg,#2c2410 0%,#5a4a1d 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        [data-theme="light"] .card-main .card-val { background: linear-gradient(180deg,#7a5c1e 0%,#b38728 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        [data-theme="light"] .card-share { color:#a89a6e; }
+        [data-theme="light"] .liq-box, [data-theme="light"] .chart-box, [data-theme="light"] .table-box { background:#fff; border-color:#ecdfb8; }
+        [data-theme="light"] .bar-bg { background:#f1e9d3; border-color:#e6dcc0; }
+        [data-theme="light"] .row-item { background: linear-gradient(180deg,#fff 0%,#fbf5e6 100%); border-color:#ecdfb8; }
+        [data-theme="light"] .input-inline, [data-theme="light"] .input-box input { color:#221c10; }
+        [data-theme="light"] .meta-details, [data-theme="light"] .input-sub { color:#a89a6e; }
+        [data-theme="light"] .select-liq { background:#fff; border-color:#e2d6b0; color:#a89a6e; }
+        [data-theme="light"] .input-box { background:#fff; border-color:#e2d6b0; }
+        [data-theme="light"] .input-box span { color:#cbbd90; }
+        [data-theme="light"] .btn-add { border-color:#e2d6b0; color:#b3a575; }
+        [data-theme="light"] .table-hdr { border-color:#ecdfb8; }
+        [data-theme="light"] .table-hdr-share, [data-theme="light"] .chart-period { color:#b3a575; }
+        [data-theme="light"] .modal-box { background:#fffdf5; border-color:#cdb05a; }
+        [data-theme="light"] .modal-input { background:#fff; border-color:#e2d6b0; color:#221c10; }
+        [data-theme="light"] .modal-box p, [data-theme="light"] .modal-box ol { color:#7a7050; }
+        [data-theme="light"] .btn-mini { color:#d8cca0; }
+        [data-theme="light"] .btn-mini:hover { color:#6b6044; }
+        [data-theme="light"] .chart-empty { color:#cdc3a0; }
+        [data-theme="light"] .section-title { color:#a8801e; }
+        [data-theme="light"] .legend-label { color:#7a7050; }
+        [data-theme="light"] .legend-pct { color:#3a3220; }
+        [data-theme="light"] .chart-tooltip { background:#fff; color:#221c10; border-color:#cdb05a; box-shadow:0 4px 14px rgba(0,0,0,0.15); }
+        [data-theme="light"] .chart-tooltip strong { color:#9c7a1a; }
     </style>
 </head>
 <body>
@@ -235,10 +247,7 @@
 
 <header>
     <div class="logo-wrap">
-        <!-- Badge dorado metalico -->
-        <div class="logo-badge">
-            <span class="logo-pc-text">PC</span>
-        </div>
+        <div class="logo-badge"><span class="logo-pc-text">PC</span></div>
         <div class="logo-text">
             <span class="logo-name">PC Capital</span>
             <span class="logo-sub">Patrimonio · Live</span>
@@ -248,10 +257,10 @@
     <div id="date-badge" class="date-badge">—</div>
 
     <div class="toolbar">
+        <button id="btn-theme" class="btn" onclick="toggleTheme()" title="Modo claro/oscuro">🌙</button>
         <button id="btn-undo" class="btn" onclick="ejecutarUndo()" disabled>↩</button>
         <button id="btn-redo" class="btn" onclick="ejecutarRedo()" disabled>↪</button>
         <div id="cloud-indicator" class="cloud-status" style="color:#eab308;">⏳</div>
-        <button class="btn btn-gold" onclick="guardarSnapshotMes()">📸 Mes</button>
         <button class="btn btn-gold" onclick="abrirConfigModal()">☁️</button>
         <button class="btn btn-gold" onclick="window.print()">📄</button>
     </div>
@@ -259,99 +268,153 @@
     <div class="tc-box">1 USD = <input type="number" id="tc" value="18.00" step="0.01" oninput="registrarCambio(); calcularTodo(); planearSincronizacion();"> MXN</div>
 </header>
 
-<div class="container">
-    <section class="grid-sum">
-        <div class="card card-main">
-            <div class="card-flag">🇲🇽🇺🇸</div>
-            <span class="card-title">Patrimonio Total</span>
-            <h3 id="resumen-total" class="card-val">$ 0 USD</h3>
-        </div>
-        <div class="card card-mxn">
-            <div class="card-flag">🇲🇽</div>
-            <span class="card-title">Total Pesos</span>
-            <h3 id="resumen-mxn" class="card-val">$ 0 MXN</h3>
-            <div class="card-share" id="share-total-mxn">0% del patrimonio</div>
-        </div>
-        <div class="card card-usd">
-            <div class="card-flag">🇺🇸</div>
-            <span class="card-title">Total Dólares</span>
-            <h3 id="resumen-usd" class="card-val">$ 0 USD</h3>
-            <div class="card-share" id="share-total-usd">0% del patrimonio</div>
-        </div>
-    </section>
+<div class="pager-dots">
+    <span class="dot active" data-i="0" onclick="goToPage(0)"></span>
+    <span class="dot" data-i="1" onclick="goToPage(1)"></span>
+</div>
 
-    <section class="liq-box">
-        <div class="section-title">Disponibilidad de Capital (USD)</div>
-        <div class="bar-wrapper"><div class="bar-info"><span>⚡ Inmediata</span><span id="val-liq-inmediata">$ 0</span></div><div class="bar-bg"><div id="bar-liq-inmediata" class="bar-fill"></div></div></div>
-        <div class="bar-wrapper"><div class="bar-info"><span>⏱ Corto Plazo (24h)</span><span id="val-liq-24h">$ 0</span></div><div class="bar-bg"><div id="bar-liq-24h" class="bar-fill"></div></div></div>
-        <div class="bar-wrapper"><div class="bar-info"><span>🗓 Mediano Plazo (Anual)</span><span id="val-liq-annual">$ 0</span></div><div class="bar-bg"><div id="bar-liq-annual" class="bar-fill"></div></div></div>
-        <div class="bar-wrapper"><div class="bar-info"><span>🔒 Largo Plazo / Retiro</span><span id="val-liq-retirement">$ 0</span></div><div class="bar-bg"><div id="bar-liq-retirement" class="bar-fill"></div></div></div>
-    </section>
+<div class="pages-viewport" id="pages-viewport">
+<div class="pages-track" id="pages-track">
 
-    <!-- Gráfico tipo acciones -->
-    <section class="chart-box">
-        <div class="chart-hdr">
-            <div class="chart-hdr-left">
-                <div class="section-title" style="margin:0;">📈 Evolución Patrimonial</div>
-                <div class="chart-meta">
-                    <span class="chart-val" id="chart-last-val">—</span>
-                    <span class="chart-chg neu" id="chart-chg">—</span>
-                </div>
-                <div class="chart-period" id="chart-period">Cargando historial…</div>
-            </div>
-            <div style="display:flex; gap:0.4rem; align-self:flex-start;">
-                <button class="btn btn-gold" onclick="guardarSnapshotMes()" style="font-size:0.6rem;">🔒 Cerrar mes</button>
-                <button class="btn" onclick="toggleHistEditor()" id="btn-hist-edit" style="font-size:0.6rem;">✏️ Editar</button>
-            </div>
-        </div>
-        <div id="chart-container" style="position:relative;">
-            <div class="chart-empty" id="chart-empty" style="display:none;">
-                Presioná <strong style="color:var(--gold-bright)">📸 Mes</strong> para comenzar el historial
-            </div>
-            <svg id="evolucion-chart" style="display:none;" height="170"></svg>
-        </div>
+    <!-- ════════ PÁGINA 1: DASHBOARD PRINCIPAL ════════ -->
+    <div class="page-slide">
+    <div class="container">
 
-        <!-- Editor de historial colapsable -->
-        <div id="hist-editor" style="display:none; margin-top:1rem;">
-            <div style="height:1px; background:linear-gradient(90deg,transparent,#2a2a2a,transparent); margin-bottom:1rem;"></div>
-            <div style="font-size:0.58rem; color:#444; text-transform:uppercase; letter-spacing:0.14em; margin-bottom:0.75rem;">Meses freezados</div>
-            <div id="hist-rows" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
-            <button onclick="agregarMesManual()" style="margin-top:0.6rem; width:100%; background:transparent; border:1px dashed #1e1e1e; color:#333; font-size:0.66rem; font-weight:bold; padding:0.4rem; border-radius:5px; cursor:pointer;"
-                onmouseover="this.style.borderColor='#b38728';this.style.color='#e5c158'"
-                onmouseout="this.style.borderColor='#1e1e1e';this.style.color='#333'">+ Agregar mes manualmente</button>
-        </div>
-    </section>
+        <section class="grid-sum">
+            <div class="card card-main">
+                <div class="card-flag">🇲🇽🇺🇸</div>
+                <span class="card-title">Patrimonio Total</span>
+                <h3 id="resumen-total" class="card-val">$ 0 USD</h3>
+            </div>
+            <div class="card card-mxn">
+                <div class="card-flag">🇲🇽</div>
+                <span class="card-title">Total Pesos</span>
+                <h3 id="resumen-mxn" class="card-val">$ 0 MXN</h3>
+                <div class="card-share" id="share-total-mxn">0% del patrimonio</div>
+            </div>
+            <div class="card card-usd">
+                <div class="card-flag">🇺🇸</div>
+                <span class="card-title">Total Dólares</span>
+                <h3 id="resumen-usd" class="card-val">$ 0 USD</h3>
+                <div class="card-share" id="share-total-usd">0% del patrimonio</div>
+            </div>
+        </section>
 
-    <section class="grid-tables">
-        <div class="table-box border-gold">
-            <div class="table-hdr">
-                <div class="table-hdr-left">
-                    <span class="table-hdr-title">🇲🇽 Pesos (MXN)</span>
-                    <span class="table-hdr-share" id="share-mxn-label">0% del patrimonio</span>
+        <section class="liq-box">
+            <div class="section-title">Disponibilidad de Capital (USD)</div>
+            <div class="bar-wrapper"><div class="bar-info"><span>⚡ Inmediata</span><span id="val-liq-inmediata">$ 0</span></div><div class="bar-bg"><div id="bar-liq-inmediata" class="bar-fill"></div></div></div>
+            <div class="bar-wrapper"><div class="bar-info"><span>⏱ Corto Plazo (24h)</span><span id="val-liq-24h">$ 0</span></div><div class="bar-bg"><div id="bar-liq-24h" class="bar-fill"></div></div></div>
+            <div class="bar-wrapper"><div class="bar-info"><span>🗓 Mediano Plazo (Anual)</span><span id="val-liq-annual">$ 0</span></div><div class="bar-bg"><div id="bar-liq-annual" class="bar-fill"></div></div></div>
+            <div class="bar-wrapper"><div class="bar-info"><span>🔒 Largo Plazo / Retiro</span><span id="val-liq-retirement">$ 0</span></div><div class="bar-bg"><div id="bar-liq-retirement" class="bar-fill"></div></div></div>
+        </section>
+
+        <section class="chart-box">
+            <div class="chart-hdr">
+                <div class="chart-hdr-left">
+                    <div class="section-title" style="margin:0;">📈 Evolución Patrimonial</div>
+                    <div class="chart-meta">
+                        <span class="chart-val" id="chart-last-val">—</span>
+                        <span class="chart-chg neu" id="chart-chg">—</span>
+                    </div>
+                    <div class="chart-period" id="chart-period">Cargando historial…</div>
                 </div>
-                <div class="table-hdr-right">
-                    <span class="table-hdr-total" id="total-mxn-footer">$ 0 MXN</span>
-                    <span class="table-hdr-sub" id="pct-mxn-usd">≈ $ 0 USD</span>
-                </div>
-            </div>
-            <div class="account-rows" id="contenedor-mxn"></div>
-            <button class="btn-add" onclick="agregarNuevaFila('mxn')">+ Nueva Categoría MXN</button>
-        </div>
-        <div class="table-box border-blue">
-            <div class="table-hdr">
-                <div class="table-hdr-left">
-                    <span class="table-hdr-title">🇺🇸 Dólares (USD)</span>
-                    <span class="table-hdr-share" id="share-usd-label">0% del patrimonio</span>
-                </div>
-                <div class="table-hdr-right">
-                    <span class="table-hdr-total" id="total-usd-footer">$ 0 USD</span>
-                    <span class="table-hdr-sub" id="pct-usd-mxn">≈ $ 0 MXN</span>
+                <div style="display:flex; gap:0.4rem; align-self:flex-start;">
+                    <button class="btn btn-gold" onclick="guardarSnapshotMes()" style="font-size:0.6rem;">🔒 Cerrar mes</button>
+                    <button class="btn" onclick="toggleHistEditor()" id="btn-hist-edit" style="font-size:0.6rem;">✏️ Editar</button>
                 </div>
             </div>
-            <div class="account-rows" id="contenedor-usd"></div>
-            <button class="btn-add" onclick="agregarNuevaFila('usd')">+ Nueva Categoría USD</button>
-        </div>
-    </section>
+            <div id="chart-container" style="position:relative;">
+                <div class="chart-empty" id="chart-empty" style="display:none;">
+                    Presioná <strong style="color:var(--gold-bright)">🔒 Cerrar mes</strong> para comenzar el historial
+                </div>
+                <svg id="evolucion-chart" style="display:none;" height="170"></svg>
+            </div>
+            <div style="font-size:0.56rem;color:#333;margin-top:0.5rem;text-align:center;">💡 Tocá o pasá el dedo sobre el gráfico para ver el monto de cada mes</div>
+
+            <div id="hist-editor" style="display:none; margin-top:1rem;">
+                <div style="height:1px; background:linear-gradient(90deg,transparent,#2a2a2a,transparent); margin-bottom:1rem;"></div>
+                <div style="font-size:0.58rem; color:#444; text-transform:uppercase; letter-spacing:0.14em; margin-bottom:0.75rem;">Meses freezados</div>
+                <div id="hist-rows" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+                <button onclick="agregarMesManual()" style="margin-top:0.6rem; width:100%; background:transparent; border:1px dashed #1e1e1e; color:#333; font-size:0.66rem; font-weight:bold; padding:0.4rem; border-radius:5px; cursor:pointer;"
+                    onmouseover="this.style.borderColor='#b38728';this.style.color='#e5c158'"
+                    onmouseout="this.style.borderColor='#1e1e1e';this.style.color='#333'">+ Agregar mes manualmente</button>
+            </div>
+        </section>
+
+        <section class="grid-tables">
+            <div class="table-box border-gold">
+                <div class="table-hdr">
+                    <div class="table-hdr-left">
+                        <span class="table-hdr-title">🇲🇽 Pesos (MXN)</span>
+                        <span class="table-hdr-share" id="share-mxn-label">0% del patrimonio</span>
+                    </div>
+                    <div class="table-hdr-right">
+                        <span class="table-hdr-total" id="total-mxn-footer">$ 0 MXN</span>
+                        <span class="table-hdr-sub" id="pct-mxn-usd">≈ $ 0 USD</span>
+                    </div>
+                </div>
+                <div class="account-rows" id="contenedor-mxn"></div>
+                <button class="btn-add" onclick="agregarNuevaFila('mxn')">+ Nueva Categoría MXN</button>
+            </div>
+            <div class="table-box border-blue">
+                <div class="table-hdr">
+                    <div class="table-hdr-left">
+                        <span class="table-hdr-title">🇺🇸 Dólares (USD)</span>
+                        <span class="table-hdr-share" id="share-usd-label">0% del patrimonio</span>
+                    </div>
+                    <div class="table-hdr-right">
+                        <span class="table-hdr-total" id="total-usd-footer">$ 0 USD</span>
+                        <span class="table-hdr-sub" id="pct-usd-mxn">≈ $ 0 MXN</span>
+                    </div>
+                </div>
+                <div class="account-rows" id="contenedor-usd"></div>
+                <button class="btn-add" onclick="agregarNuevaFila('usd')">+ Nueva Categoría USD</button>
+            </div>
+        </section>
+
+    </div>
+    </div>
+
+    <!-- ════════ PÁGINA 2: ANALYTICS ════════ -->
+    <div class="page-slide">
+    <div class="container">
+
+        <section class="chart-box">
+            <div class="section-title" style="margin-bottom:1rem;">🥇 Distribución por Moneda</div>
+            <div class="donut-row">
+                <svg id="donut-currency" width="150" height="150" viewBox="0 0 150 150"></svg>
+                <div id="legend-currency" style="flex:1; min-width:140px;"></div>
+            </div>
+        </section>
+
+        <section class="chart-box">
+            <div class="section-title" style="margin-bottom:1rem;">💧 Distribución por Liquidez</div>
+            <div class="donut-row">
+                <svg id="donut-liquidez" width="150" height="150" viewBox="0 0 150 150"></svg>
+                <div id="legend-liquidez" style="flex:1; min-width:140px;"></div>
+            </div>
+        </section>
+
+        <section class="chart-box">
+            <div class="chart-hdr">
+                <div class="chart-hdr-left">
+                    <div class="section-title" style="margin:0;">🔮 Proyección a 12 Meses</div>
+                    <div class="chart-period" id="proy-stat">Calculando…</div>
+                </div>
+            </div>
+            <div id="proyeccion-container" style="position:relative;">
+                <div class="chart-empty" id="proyeccion-empty" style="display:none;">
+                    Necesitás al menos 2 meses de historial freezado para proyectar
+                </div>
+                <svg id="proyeccion-chart" style="display:none;" height="180"></svg>
+            </div>
+            <div style="font-size:0.56rem;color:#333;margin-top:0.5rem;text-align:center;">La línea punteada es una proyección estimada, no garantizada</div>
+        </section>
+
+    </div>
+    </div>
+
+</div>
 </div>
 
 <script>
@@ -360,14 +423,56 @@
     const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const hoy   = new Date();
-    const str   = `${dias[hoy.getDay()]} ${hoy.getDate()} • <span>${meses[hoy.getMonth()]} ${hoy.getFullYear()}</span>`;
-    document.getElementById('date-badge').innerHTML = str;
+    document.getElementById('date-badge').innerHTML = `${dias[hoy.getDay()]} ${hoy.getDate()} • <span>${meses[hoy.getMonth()]} ${hoy.getFullYear()}</span>`;
+})();
+
+// ── Tema claro/oscuro ─────────────────────────────────────────────────────
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    const btn = document.getElementById('btn-theme');
+    if (btn) btn.innerText = t === 'light' ? '☀️' : '🌙';
+    localStorage.setItem('pc_theme', t);
+}
+function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    applyTheme(cur);
+    renderChart(); renderProyeccion(); renderDonuts(); cargarListas();
+}
+function chartTheme() {
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    return light
+        ? { grid:'#e3d7ac', text:'#9c8f68', axisLine:'#d8cb9c' }
+        : { grid:'#181818', text:'#383838', axisLine:'#1a1a1a' };
+}
+
+// ── Navegación entre páginas (swipe) ──────────────────────────────────────
+let currentPage = 0;
+function goToPage(i) {
+    currentPage = i;
+    document.getElementById('pages-track').style.transform = `translateX(-${i*50}%)`;
+    document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
+    if (i===1) { renderDonuts(); renderProyeccion(); }
+}
+(function initSwipe() {
+    const vp = document.getElementById('pages-viewport');
+    let sx=0, sy=0, tracking=false;
+    vp.addEventListener('touchstart', e => {
+        if (e.touches.length !== 1) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
+    }, {passive:true});
+    vp.addEventListener('touchend', e => {
+        if (!tracking) return; tracking = false;
+        const dx = e.changedTouches[0].clientX - sx;
+        const dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)*1.4) {
+            if (dx < 0 && currentPage===0) goToPage(1);
+            else if (dx > 0 && currentPage===1) goToPage(0);
+        }
+    }, {passive:true});
 })();
 
 // ── Nube ──────────────────────────────────────────────────────────────────
-function getConfig() {
-    return { binId: localStorage.getItem('pc_bin_id')||'', apiKey: localStorage.getItem('pc_api_key')||'' };
-}
+function getConfig() { return { binId: localStorage.getItem('pc_bin_id')||'', apiKey: localStorage.getItem('pc_api_key')||'' }; }
 function nubeConfigurada() { const {binId,apiKey}=getConfig(); return binId.trim()!=='' && apiKey.trim()!==''; }
 function abrirConfigModal() {
     const {binId,apiKey}=getConfig();
@@ -385,6 +490,16 @@ function guardarConfigNube() {
     descargarDesdeNube();
 }
 
+// ── IDs estables para cada cuenta (sparklines) ────────────────────────────
+function genId(){ return 'a'+Math.random().toString(36).slice(2,9); }
+function ensureIds(arr){ arr.forEach(it=>{ if(!it.id) it.id=genId(); }); }
+function snapshotDetalle(){
+    const mxn={}, usd={};
+    portafolioMXN.forEach(it=>{ if(it.id) mxn[it.id]=it.v; });
+    portafolioUSD.forEach(it=>{ if(it.id) usd[it.id]=it.v; });
+    return {mxn,usd};
+}
+
 // ── Datos ─────────────────────────────────────────────────────────────────
 let portafolioMXN = [
     {c:"Cash",p:"Home",l:"Inmediata",v:0},{c:"Mexico Account",p:"Citibanamex",l:"Inmediata",v:0},{c:"Ahorro Fácil",p:"Citibanamex",l:"Inmediata",v:0},
@@ -398,14 +513,39 @@ let portafolioUSD = [
     {c:"Criptomonedas",p:"Coinbase",l:"Inmediata",v:0},{c:"Opciones Nike",p:"Fidelity",l:"Retirement",v:0},{c:"Cash Arg",p:"Caja seguridad",l:"Inmediata",v:0},
     {c:"Activos Arg",p:"Auto",l:"Inmediata",v:0},{c:"USDc",p:"Dólar App",l:"Inmediata",v:0}
 ];
+ensureIds(portafolioMXN); ensureIds(portafolioUSD);
 
-// Histórico base: Abril 2025 = $ 633,803 USD
+// Histórico base: Abril 2026 = $ 616,081 USD
 const HISTORIAL_BASE = [{ mes: "2026-04", total: 616081 }];
 let historialMensual = [...HISTORIAL_BASE];
 let historialEstados=[], indiceHistorial=-1, bloqueandoHistorial=false, timerSincronizacion;
+let ultimoCalculo = {};
+let chartDataMain = {points:[], W:0, H:0};
+let chartDataProy = {points:[], W:0, H:0};
+
+// ── Sparkline mini por fila ────────────────────────────────────────────────
+function sparklineSVG(tipo, id) {
+    const histPoints = historialMensual
+        .filter(h => h.mes < mesActual() && h.detalle && h.detalle[tipo] && h.detalle[tipo][id] != null)
+        .slice(-5).map(h => h.detalle[tipo][id]);
+    const arr = tipo==='mxn' ? portafolioMXN : portafolioUSD;
+    const item = arr.find(it => it.id === id);
+    const points = [...histPoints, ...(item ? [item.v] : [])];
+    if (points.length < 2) return '';
+    const w=34, h=14;
+    const min=Math.min(...points), max=Math.max(...points), range=(max-min)||1;
+    const stepX = w/(points.length-1);
+    const pts = points.map((v,i) => `${(i*stepX).toFixed(1)},${(h-((v-min)/range)*h).toFixed(1)}`).join(' ');
+    const up = points[points.length-1] >= points[0];
+    const color = up ? '#22c55e' : '#ef4444';
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="margin-left:3px;flex-shrink:0;overflow:visible;vertical-align:middle;">
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+    </svg>`;
+}
 
 // ── Render listas ─────────────────────────────────────────────────────────
 function cargarListas() {
+    ensureIds(portafolioMXN); ensureIds(portafolioUSD);
     const render = (arr,t) => arr.map((item,i) => `
         <div class="row-item">
             <div class="row-actions">
@@ -422,7 +562,7 @@ function cargarListas() {
                         ${t==='mxn'?`<option value="24 hs" ${item.l==='24 hs'?'selected':''}>24 hs</option>`:''}
                         <option value="Annual" ${item.l==='Annual'?'selected':''}>Annual</option>
                         <option value="Retirement" ${item.l==='Retirement'?'selected':''}>Retirement</option>
-                    </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>
+                    </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>${sparklineSVG(t,item.id)}
                 </div>
             </div>
             <div class="input-box"><span>$</span><input type="number" value="${item.v}" oninput="act('${t}',${i},'v',this.value); calcularTodo(); planearSincronizacion()"></div>
@@ -445,7 +585,7 @@ function reordenar(tipo,indice,dir) {
 }
 function agregarNuevaFila(tipo) {
     registrarCambio();
-    (tipo==='mxn'?portafolioMXN:portafolioUSD).push({c:"Nueva Cuenta",p:"Plataforma",l:"Inmediata",v:0});
+    (tipo==='mxn'?portafolioMXN:portafolioUSD).push({c:"Nueva Cuenta",p:"Plataforma",l:"Inmediata",v:0,id:genId()});
     cargarListas(); calcularTodo(); planearSincronizacion();
 }
 function eliminar(tipo,indice) {
@@ -508,17 +648,21 @@ function calcularTodo() {
     document.getElementById('val-liq-annual').innerText     = fmtN(lA,'USD');
     document.getElementById('val-liq-retirement').innerText = fmtN(lR,'USD');
 
+    ultimoCalculo = { mX, uS, lI, l24, lA, lR, pUSD, mxnEnUSD, tc };
     guardarBufferVivo();
     renderChart();
+    renderProyeccion();
+    renderDonuts();
 }
 
-// ── Gráfico tipo acciones ─────────────────────────────────────────────────
+// ── Gráfico tipo acciones (Evolución) ──────────────────────────────────────
 function renderChart() {
     const svg=document.getElementById('evolucion-chart');
     const empty=document.getElementById('chart-empty');
     const lastValEl=document.getElementById('chart-last-val');
     const chgEl=document.getElementById('chart-chg');
     const periodEl=document.getElementById('chart-period');
+    if (!svg) return;
 
     if (!historialMensual||historialMensual.length<1) {
         svg.style.display='none'; empty.style.display='block';
@@ -528,7 +672,6 @@ function renderChart() {
     }
     empty.style.display='none'; svg.style.display='block';
 
-    // Meses freezados (pasados) + punto vivo del mes actual
     const frozen = historialMensual.filter(h => h.mes < mesActual()).slice(-17);
     const liveTotal = totalActualUSD();
     const livePoint = { mes: mesActual(), total: liveTotal, live: true };
@@ -537,16 +680,12 @@ function renderChart() {
     const first = data[0].total, last = data[N-1].total;
     const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
 
-    // Header del gráfico
     lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
-    const sign = diff >= 0 ? '+' : '';
-    chgEl.innerText = `${sign}${sign==='-'?'':'+'}${diffPct.toFixed(1)}% (${sign}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')})`;
     chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
     chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
     const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
     periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
 
-    // SVG dimensions
     const W = Math.max(svg.parentElement.clientWidth||320, 200), H = 170;
     const pad = {t:14, r:14, b:36, l:56};
     const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
@@ -556,42 +695,36 @@ function renderChart() {
     const scX = i => N<2 ? pad.l+iW/2 : pad.l+(i/(N-1))*iW;
     const scY = v => pad.t+iH - ((v-minV)/range)*iH;
 
-    // Polyline points (stock-style: angular)
     const pts = data.map((d,i)=>`${scX(i).toFixed(1)},${scY(d.total).toFixed(1)}`).join(' ');
     const fillPts = `${scX(0).toFixed(1)},${(pad.t+iH).toFixed(1)} ${pts} ${scX(N-1).toFixed(1)},${(pad.t+iH).toFixed(1)}`;
 
-    // Y gridlines & labels (3 ticks)
+    const ct = chartTheme();
     const gridStep = range / 3;
     const yGrid = [0,1,2,3].map(k => {
         const v = minV + gridStep*k, y = scY(v);
         const lbl = v>=1e6 ? (v/1e6).toFixed(2)+'M' : v>=1000 ? Math.round(v/1000)+'k' : Math.round(v);
-        return `<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+iW}" y2="${y.toFixed(1)}" stroke="#181818" stroke-width="1" stroke-dasharray="3,3"/>
-                <text x="${pad.l-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="#383838" font-size="8.5" font-family="monospace">${lbl}</text>`;
+        return `<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+iW}" y2="${y.toFixed(1)}" stroke="${ct.grid}" stroke-width="1" stroke-dasharray="3,3"/>
+                <text x="${pad.l-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="${ct.text}" font-size="8.5" font-family="monospace">${lbl}</text>`;
     }).join('');
 
-    // X labels
     const step = N > 12 ? 3 : N > 7 ? 2 : 1;
     const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const xLabels = data.map((d,i) => {
         if (i%step!==0 && i!==N-1) return '';
         const [y,mo]=d.mes.split('-');
-        const lbl=`${mNames[parseInt(mo)]}'${y.slice(2)}`;
-        return `<text x="${scX(i).toFixed(1)}" y="${H-10}" text-anchor="middle" fill="#383838" font-size="8" font-family="monospace">${lbl}</text>`;
+        return `<text x="${scX(i).toFixed(1)}" y="${H-10}" text-anchor="middle" fill="${ct.text}" font-size="8" font-family="monospace">${mNames[parseInt(mo)]}'${y.slice(2)}</text>`;
     }).join('');
 
-    // Dots — el último punto es VIVO (dorado pulsante), los demás son freezados
     const dots = data.map((d,i) => {
         const x=scX(i).toFixed(1), y=scY(d.total).toFixed(1);
         if (d.live) {
-            // Punto vivo: anillo exterior + punto central brillante
             return `<circle cx="${x}" cy="${y}" r="7" fill="#b38728" opacity="0.12"/>
                     <circle cx="${x}" cy="${y}" r="4.5" fill="#b38728" opacity="0.2"/>
                     <circle cx="${x}" cy="${y}" r="3" fill="#e5c158" stroke="#fcf6ba" stroke-width="1.5"/>`;
         }
-        return `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"><title>${d.mes}: $${Math.round(d.total).toLocaleString('en-US')} USD</title></circle>`;
+        return `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"/>`;
     }).join('');
 
-    // Valor del último punto label
     const lx=scX(N-1), ly=scY(last);
     const anchor = lx > W*0.75 ? 'end' : 'start';
     const lxOff = anchor==='end' ? lx-6 : lx+6;
@@ -614,32 +747,214 @@ function renderChart() {
             </linearGradient>
         </defs>
         ${yGrid}
-        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="#1a1a1a" stroke-width="1"/>
+        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="${ct.axisLine}" stroke-width="1"/>
         <polygon points="${fillPts}" fill="url(#areaG)"/>
         <polyline points="${pts}" fill="none" stroke="url(#lineG)" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square"/>
         ${dots}
         ${lastLabel}
         ${xLabels}`;
+
+    chartDataMain = { W, H, points: data.map((d,i)=>({ x:scX(i), y:scY(d.total), mes:d.mes, total:d.total, live:!!d.live })) };
 }
 
-// ── Snapshot mensual ──────────────────────────────────────────────────────
-function mesActual() {
-    const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+// ── Gráfico de Proyección a 12 meses ───────────────────────────────────────
+function renderProyeccion() {
+    const svg = document.getElementById('proyeccion-chart');
+    const empty = document.getElementById('proyeccion-empty');
+    const statEl = document.getElementById('proy-stat');
+    if (!svg) return;
+
+    const frozen = historialMensual.filter(h => h.mes < mesActual());
+    const live = { mes: mesActual(), total: totalActualUSD() };
+    const data = [...frozen, live].filter(d => d.total > 0);
+
+    if (data.length < 2) {
+        svg.style.display='none'; if(empty) empty.style.display='block';
+        if(statEl) statEl.innerText='Necesitás al menos 2 meses de historial para proyectar.';
+        chartDataProy = {points:[], W:0, H:0};
+        return;
+    }
+    if(empty) empty.style.display='none'; svg.style.display='block';
+
+    const n=data.length;
+    const xs=data.map((_,i)=>i), ys=data.map(d=>d.total);
+    const xMean=xs.reduce((a,b)=>a+b,0)/n, yMean=ys.reduce((a,b)=>a+b,0)/n;
+    let num=0,den=0;
+    for(let i=0;i<n;i++){ num+=(xs[i]-xMean)*(ys[i]-yMean); den+=(xs[i]-xMean)**2; }
+    const slope = den!==0 ? num/den : 0;
+    const intercept = yMean - slope*xMean;
+
+    const mNames=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const [ly,lm]=data[n-1].mes.split('-').map(Number);
+    const projected=[];
+    for(let k=1;k<=12;k++){
+        const tm=(lm-1)+k, y=ly+Math.floor(tm/12), m=(tm%12)+1;
+        projected.push({ mes:`${y}-${String(m).padStart(2,'0')}`, total: Math.max(0, intercept+slope*((n-1)+k)), proy:true });
+    }
+    const full = [...data.map(d=>({...d,proy:false})), ...projected];
+    const N = full.length;
+    const histCount = data.length;
+
+    const finalProy = projected[projected.length-1].total;
+    if (statEl) {
+        const arrow = slope>=0 ? '▲' : '▼';
+        const color = slope>=0 ? '#22c55e' : '#ef4444';
+        statEl.innerHTML = `Crecimiento promedio: <strong style="color:${color}">${arrow} $ ${Math.abs(Math.round(slope)).toLocaleString('en-US')}/mes</strong>
+            &nbsp;·&nbsp; En 12 meses: <strong style="color:#e5c158">$ ${Math.round(finalProy).toLocaleString('en-US')} USD</strong>`;
+    }
+
+    const W = Math.max(svg.parentElement.clientWidth||320, 200), H = 180;
+    const pad = {t:14, r:14, b:34, l:58};
+    const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+    const valsAll = full.map(d=>d.total);
+    const minV=Math.min(...valsAll)*0.92, maxV=Math.max(...valsAll)*1.06;
+    const range=maxV-minV||1;
+    const scX = i => N<2 ? pad.l+iW/2 : pad.l+(i/(N-1))*iW;
+    const scY = v => pad.t+iH-((v-minV)/range)*iH;
+
+    const histPts = full.slice(0,histCount).map((d,i)=>`${scX(i).toFixed(1)},${scY(d.total).toFixed(1)}`).join(' ');
+    const proyPts = full.slice(histCount-1).map((d,i)=>`${scX(histCount-1+i).toFixed(1)},${scY(d.total).toFixed(1)}`).join(' ');
+
+    const ct = chartTheme();
+    const gridStep = range/3;
+    const yGrid=[0,1,2,3].map(k=>{
+        const v=minV+gridStep*k, y=scY(v);
+        const lbl = v>=1e6?(v/1e6).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'k':Math.round(v);
+        return `<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+iW}" y2="${y.toFixed(1)}" stroke="${ct.grid}" stroke-width="1" stroke-dasharray="3,3"/>
+                <text x="${pad.l-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="${ct.text}" font-size="8.5" font-family="monospace">${lbl}</text>`;
+    }).join('');
+
+    const step = N>14?3:N>8?2:1;
+    const xLabels = full.map((d,i)=>{
+        if (i%step!==0 && i!==N-1) return '';
+        const [y,mo]=d.mes.split('-');
+        return `<text x="${scX(i).toFixed(1)}" y="${H-8}" text-anchor="middle" fill="${ct.text}" font-size="7.5" font-family="monospace">${mNames[parseInt(mo)]}'${y.slice(2)}</text>`;
+    }).join('');
+
+    const dots = full.map((d,i)=>{
+        const x=scX(i).toFixed(1), y=scY(d.total).toFixed(1);
+        if (d.proy) return `<circle cx="${x}" cy="${y}" r="2" fill="none" stroke="#b38728" stroke-width="1"/>`;
+        if (i===histCount-1) return `<circle cx="${x}" cy="${y}" r="3" fill="#e5c158" stroke="#fcf6ba" stroke-width="1.5"/>`;
+        return `<circle cx="${x}" cy="${y}" r="2.2" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"/>`;
+    }).join('');
+
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('width',W); svg.setAttribute('height',H);
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="lineGP" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#6a4c14"/><stop offset="100%" stop-color="#fcf6ba"/>
+            </linearGradient>
+        </defs>
+        ${yGrid}
+        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="${ct.axisLine}" stroke-width="1"/>
+        <polyline points="${histPts}" fill="none" stroke="url(#lineGP)" stroke-width="2" stroke-linejoin="round"/>
+        <polyline points="${proyPts}" fill="none" stroke="#b38728" stroke-width="1.6" stroke-dasharray="5,4" stroke-linejoin="round"/>
+        ${dots}
+        ${xLabels}`;
+
+    chartDataProy = { W, H, points: full.map((d,i)=>({ x:scX(i), y:scY(d.total), mes:d.mes, total:d.total, proy:!!d.proy })) };
 }
+
+// ── Tooltip interactivo (hover/touch) ──────────────────────────────────────
+function attachChartTooltip(svgId, containerId, getData) {
+    const svg = document.getElementById(svgId);
+    const container = document.getElementById(containerId);
+    if (!svg || !container) return;
+    let tip = container.querySelector('.chart-tooltip');
+    if (!tip) { tip = document.createElement('div'); tip.className='chart-tooltip'; container.appendChild(tip); }
+    const mNames=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    function showAt(clientX) {
+        const data = getData();
+        if (!data || !data.points || data.points.length===0) return;
+        const rect = svg.getBoundingClientRect();
+        if (rect.width===0) return;
+        const ratio = data.W / rect.width;
+        const relX = (clientX - rect.left) * ratio;
+        let nearest = data.points[0], best=Infinity;
+        data.points.forEach(p => { const d=Math.abs(p.x-relX); if(d<best){best=d; nearest=p;} });
+        const pxX = nearest.x / ratio;
+        const clamped = Math.max(36, Math.min(pxX, rect.width-36));
+        tip.style.left = clamped+'px';
+        tip.style.display='block';
+        const [y,m]=nearest.mes.split('-');
+        const tag = nearest.live ? ' (en vivo)' : nearest.proy ? ' (proyectado)' : '';
+        tip.innerHTML = `<strong>${mNames[parseInt(m)]} ${y}${tag}</strong><br>$ ${Math.round(nearest.total).toLocaleString('en-US')} USD`;
+    }
+    function hide(){ tip.style.display='none'; }
+    svg.addEventListener('mousemove', e=>showAt(e.clientX));
+    svg.addEventListener('mouseleave', hide);
+    svg.addEventListener('touchstart', e=>{ if(e.touches.length===1) showAt(e.touches[0].clientX); }, {passive:true});
+    svg.addEventListener('touchmove', e=>{ if(e.touches.length===1) showAt(e.touches[0].clientX); }, {passive:true});
+    svg.addEventListener('touchend', ()=> setTimeout(hide,1000), {passive:true});
+}
+
+// ── Donuts (Analytics) ─────────────────────────────────────────────────────
+function renderDonut(svgId, segments, centerTop, centerSub) {
+    const ct = chartTheme();
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    const total = segments.reduce((a,s)=>a+s.value,0);
+    const size=150, r=54, cx=size/2, cy=size/2, sw=18;
+    const C = 2*Math.PI*r;
+    let cumulative=0;
+    const arcs = segments.filter(s=>s.value>0).map(s=>{
+        const frac = total>0 ? s.value/total : 0;
+        const len = frac*C;
+        const offset = C - cumulative;
+        cumulative += len;
+        return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}"
+            stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"
+            transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>`;
+    }).join('');
+    svg.setAttribute('viewBox',`0 0 ${size} ${size}`);
+    svg.innerHTML = `${arcs}
+        <text x="${cx}" y="${cy-3}" text-anchor="middle" fill="#e5c158" font-size="14" font-weight="900" font-family="monospace">${centerTop}</text>
+        <text x="${cx}" y="${cy+14}" text-anchor="middle" fill="${ct.text}" font-size="8" font-family="sans-serif">${centerSub}</text>`;
+}
+function renderLegend(containerId, segments, total) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = segments.filter(s=>s.value>0).map(s=>{
+        const p = total>0 ? (s.value/total*100).toFixed(1) : '0.0';
+        return `<div class="legend-row">
+            <span class="legend-dot" style="background:${s.color}"></span>
+            <span class="legend-label">${s.label}</span>
+            <span class="legend-pct">${p}%</span>
+        </div>`;
+    }).join('');
+}
+function renderDonuts() {
+    const u = ultimoCalculo;
+    if (!u || u.pUSD===undefined) return;
+    const segCur = [
+        {label:'Pesos (MXN)', value:u.mxnEnUSD, color:'#22c55e'},
+        {label:'Dólares (USD)', value:u.uS, color:'#60a5fa'}
+    ];
+    renderDonut('donut-currency', segCur, '$'+Math.round(u.pUSD/1000)+'k', 'Patrimonio');
+    renderLegend('legend-currency', segCur, u.pUSD);
+
+    const segLiq = [
+        {label:'⚡ Inmediata', value:u.lI, color:'#e5c158'},
+        {label:'⏱ 24h', value:u.l24, color:'#b38728'},
+        {label:'🗓 Anual', value:u.lA, color:'#7a5c1e'},
+        {label:'🔒 Retiro', value:u.lR, color:'#4a3a12'}
+    ];
+    renderDonut('donut-liquidez', segLiq, '$'+Math.round(u.pUSD/1000)+'k', 'Liquidez');
+    renderLegend('legend-liquidez', segLiq, u.pUSD);
+}
+
+// ── Helpers de mes y snapshot ───────────────────────────────────────────────
+function mesActual() { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
 function totalActualUSD() {
     const tc=parseFloat(document.getElementById('tc').value)||1;
     let mX=0,uS=0; portafolioMXN.forEach(i=>mX+=i.v); portafolioUSD.forEach(i=>uS+=i.v);
     return Math.round((mX/tc)+uS);
 }
-
-// Guarda buffer vivo en localStorage — se actualiza en cada calcularTodo()
 function guardarBufferVivo() {
     const total=totalActualUSD();
     if (total===0) return;
-    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total }));
+    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total, detalle: snapshotDetalle() }));
 }
-
-// Al iniciar: si el mes cambió, freeza el mes anterior con el último valor guardado
 function autoFreezeAlCambiarMes() {
     const bufferRaw=localStorage.getItem('pc_live_buffer');
     if (!bufferRaw) return;
@@ -647,21 +962,19 @@ function autoFreezeAlCambiarMes() {
     if (buffer.mes < mesActual() && buffer.total > 0) {
         const yaExiste=historialMensual.find(h=>h.mes===buffer.mes);
         if (!yaExiste) {
-            historialMensual.push({ mes: buffer.mes, total: buffer.total });
+            historialMensual.push({ mes: buffer.mes, total: buffer.total, detalle: buffer.detalle||null });
             historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
             planearSincronizacion();
         }
     }
 }
-
-// Freezea manualmente el mes actual al final del mes
 function guardarSnapshotMes() {
-    const total=totalActualUSD(), mes=mesActual();
+    const total=totalActualUSD(), mes=mesActual(), det=snapshotDetalle();
     const idx=historialMensual.findIndex(h=>h.mes===mes);
-    if (idx>=0) historialMensual[idx].total=total;
-    else historialMensual.push({mes,total});
+    if (idx>=0) { historialMensual[idx].total=total; historialMensual[idx].detalle=det; }
+    else historialMensual.push({mes,total,detalle:det});
     historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
-    renderChart(); planearSincronizacion();
+    renderChart(); renderProyeccion(); renderDonuts(); planearSincronizacion();
     const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const [y,m]=mes.split('-');
     alert(`🔒 ${meses[parseInt(m)-1]} ${y} freezado: $ ${total.toLocaleString('en-US')} USD`);
@@ -691,10 +1004,9 @@ async function descargarDesdeNube() {
         const data=await res.json(), d=data.record;
         if (d?.valores_mxn?.length>0) {
             document.getElementById('tc').value=d.tipo_cambio||18;
-            portafolioMXN=d.valores_mxn;
-            portafolioUSD=d.valores_usd;
+            portafolioMXN=d.valores_mxn; ensureIds(portafolioMXN);
+            portafolioUSD=d.valores_usd; ensureIds(portafolioUSD);
         }
-        // Merge historial: base (abril) + nube, sin duplicados, nube tiene prioridad
         if (d?.historial_mensual?.length>0) {
             const cloudMonths=new Set(d.historial_mensual.map(h=>h.mes));
             const baseExtra=HISTORIAL_BASE.filter(h=>!cloudMonths.has(h.mes));
@@ -708,14 +1020,12 @@ async function descargarDesdeNube() {
         console.error(e);
     }
 }
-
 function planearSincronizacion() {
     const ind=document.getElementById('cloud-indicator');
     ind.innerText="⏳ Guardando…"; ind.style.color="#eab308";
     clearTimeout(timerSincronizacion);
     timerSincronizacion=setTimeout(sincronizarNube,1500);
 }
-
 async function sincronizarNube() {
     const ind=document.getElementById('cloud-indicator');
     if (!nubeConfigurada()) { ind.innerText="☁️ Sin config"; ind.style.color="#888"; return; }
@@ -767,17 +1077,15 @@ function toggleHistEditor() {
     btn.style.borderColor = open ? 'var(--gold-dark)' : '';
     if (open) renderHistEditor();
 }
-
 function renderHistEditor() {
     const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const rows = document.getElementById('hist-rows');
-    // Solo meses freezados (pasados)
     const frozen = historialMensual.filter(h => h.mes < mesActual());
     if (frozen.length === 0) {
         rows.innerHTML = '<div style="font-size:0.68rem;color:#333;padding:0.5rem 0;">No hay meses freezados todavía.</div>';
         return;
     }
-    rows.innerHTML = frozen.map((h, i) => {
+    rows.innerHTML = frozen.map((h) => {
         const [y, m] = h.mes.split('-');
         const label  = `${mNames[parseInt(m)]} ${y}`;
         return `<div style="display:flex;align-items:center;gap:0.5rem;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:5px;padding:0.45rem 0.6rem;">
@@ -792,22 +1100,19 @@ function renderHistEditor() {
         </div>`;
     }).join('');
 }
-
 function editarMesHistorial(mes, valor) {
     const total = parseInt(valor) || 0;
     const idx   = historialMensual.findIndex(h => h.mes === mes);
-    if (idx >= 0) historialMensual[idx].total = total;
+    if (idx >= 0) { historialMensual[idx].total = total; historialMensual[idx].detalle = null; }
     else historialMensual.push({ mes, total });
     historialMensual.sort((a,b) => a.mes.localeCompare(b.mes));
-    renderChart(); planearSincronizacion();
+    renderChart(); renderProyeccion(); planearSincronizacion();
 }
-
 function eliminarMesHistorial(mes) {
     if (!confirm(`¿Eliminar el mes ${mes} del historial?`)) return;
     historialMensual = historialMensual.filter(h => h.mes !== mes);
-    renderHistEditor(); renderChart(); planearSincronizacion();
+    renderHistEditor(); renderChart(); renderProyeccion(); planearSincronizacion();
 }
-
 function agregarMesManual() {
     const mes = prompt('Ingresá el mes en formato AAAA-MM (ej: 2026-03):');
     if (!mes || !/^\d{4}-\d{2}$/.test(mes)) { alert('Formato inválido. Usá AAAA-MM.'); return; }
@@ -819,22 +1124,25 @@ function agregarMesManual() {
     if (idx >= 0) historialMensual[idx].total = total;
     else historialMensual.push({ mes, total });
     historialMensual.sort((a,b) => a.mes.localeCompare(b.mes));
-    renderHistEditor(); renderChart(); planearSincronizacion();
+    renderHistEditor(); renderChart(); renderProyeccion(); planearSincronizacion();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 window.onload = function() {
+    applyTheme(localStorage.getItem('pc_theme') || 'dark');
     cargarListas(); calcularTodo();
     descargarDesdeNube()
         .then(() => obtenerTipoCambioReal())
         .then(() => {
             setTimeout(() => {
                 registrarCambio();
-                autoFreezeAlCambiarMes(); // freeza mes anterior si cambió
-                renderChart();
+                autoFreezeAlCambiarMes();
+                renderChart(); renderProyeccion(); renderDonuts();
             }, 600);
         });
-    window.addEventListener('resize', () => renderChart());
+    attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
+    attachChartTooltip('proyeccion-chart','proyeccion-container', () => chartDataProy);
+    window.addEventListener('resize', () => { renderChart(); renderProyeccion(); });
 };
 </script>
 </body>
