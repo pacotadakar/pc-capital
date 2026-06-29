@@ -105,6 +105,15 @@
 
         /* ── Donuts / Legends (vista Analytics) ── */
         .donut-row { display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap; }
+        .fi-grid { display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem; }
+        .fi-input-box { background:#0c0c0c; border:1px solid #242424; border-radius:6px; padding:0.5rem 0.65rem; }
+        .fi-label { display:block; font-size:0.55rem; color:#555; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:0.25rem; font-weight:700; }
+        .fi-input-box input { width:100%; background:transparent; border:none; color:var(--gold-bright); font-weight:800; font-size:1rem; outline:none; font-family:monospace; }
+        .fi-row { display:flex; justify-content:space-between; gap:0.6rem; font-size:0.67rem; color:#888; padding:0.32rem 0; }
+        .fi-row span:first-child { flex:1; }
+        .fi-row span:last-child { font-family:monospace; font-weight:700; color:#ddd; text-align:right; white-space:nowrap; }
+        .fi-divider { height:1px; background:linear-gradient(90deg,transparent,#2a2a2a,transparent); margin:0.55rem 0; }
+        .fi-conclusion { font-size:0.76rem; line-height:1.7; padding:0.2rem 0; }
         .legend-row { display:flex; align-items:center; gap:0.4rem; font-size:0.66rem; margin-bottom:0.32rem; }
         .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
         .legend-label { flex-grow:1; color:#888; }
@@ -212,6 +221,10 @@
         [data-theme="light"] .section-title { color:#a8801e; }
         [data-theme="light"] .legend-label { color:#7a7050; }
         [data-theme="light"] .legend-pct { color:#3a3220; }
+        [data-theme="light"] .fi-input-box { background:#fff; border-color:#e2d6b0; }
+        [data-theme="light"] .fi-label { color:#a89a6e; }
+        [data-theme="light"] .fi-row { color:#7a7050; }
+        [data-theme="light"] .fi-row span:last-child { color:#221c10; }
         [data-theme="light"] .chart-tooltip { background:#fff; color:#221c10; border-color:#cdb05a; box-shadow:0 4px 14px rgba(0,0,0,0.15); }
         [data-theme="light"] .chart-tooltip strong { color:#9c7a1a; }
     </style>
@@ -364,12 +377,38 @@
     <div class="container">
 
         <section class="chart-box">
+            <div class="section-title" style="margin-bottom:0.2rem;">🏖️ Independencia Financiera</div>
+            <div class="chart-period" style="margin-bottom:0.9rem;">Calculá cuánto necesitás para vivir sin trabajar</div>
+
+            <div class="fi-grid">
+                <div class="fi-input-box">
+                    <span class="fi-label">Edad actual</span>
+                    <input type="number" id="fi-edad" placeholder="Tu edad" oninput="actualizarFI()">
+                </div>
+                <div class="fi-input-box">
+                    <span class="fi-label">Edad de retiro</span>
+                    <input type="number" id="fi-retiro" value="65" oninput="actualizarFI()">
+                </div>
+                <div class="fi-input-box">
+                    <span class="fi-label">Interés anual %</span>
+                    <input type="number" id="fi-tasa" value="3" step="0.1" oninput="actualizarFI()">
+                </div>
+                <div class="fi-input-box">
+                    <span class="fi-label">Necesidad mensual USD</span>
+                    <input type="number" id="fi-necesidad" value="3000" step="100" oninput="actualizarFI()">
+                </div>
+            </div>
+
+            <div id="fi-resultado" style="margin-top:1rem;"></div>
+        </section>
+
+        <section class="chart-box">
             <div class="chart-hdr">
                 <div class="chart-hdr-left">
                     <div class="section-title" style="margin:0;">🎯 Meta Patrimonial</div>
                     <div class="chart-period" id="meta-sub">Calculando…</div>
                 </div>
-                <button class="btn btn-gold" onclick="editarMeta()" style="font-size:0.6rem; align-self:flex-start;">✏️ Editar meta</button>
+                <button class="btn btn-gold" id="btn-meta-edit" onclick="toggleMetaEdit()" style="font-size:0.6rem; align-self:flex-start;">✏️ Editar</button>
             </div>
             <div style="margin-top:0.4rem;">
                 <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#777; margin-bottom:0.35rem;">
@@ -400,6 +439,7 @@
                 <div id="legend-liquidez" style="flex:1; min-width:140px;"></div>
             </div>
         </section>
+
 
         <section class="chart-box">
             <div class="chart-hdr">
@@ -458,7 +498,7 @@ function goToPage(i) {
     currentPage = i;
     document.getElementById('pages-track').style.transform = `translateX(-${i*50}%)`;
     document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
-    if (i===1) { renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); }
+    if (i===1) { renderFI(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); }
 }
 (function initSwipe() {
     const vp = document.getElementById('pages-viewport');
@@ -662,6 +702,7 @@ function calcularTodo() {
     renderChart();
     renderProyeccion();
     renderDonuts();
+    renderFI();
     renderMeta();
     renderRanking();
 }
@@ -934,7 +975,82 @@ function renderLegend(containerId, segments, total) {
         </div>`;
     }).join('');
 }
-// ── Meta Patrimonial (largo plazo, 10+ años) ────────────────────────────────
+// ── Independencia Financiera ─────────────────────────────────────────────────
+let finanzasFI = { edad: null, retiro: 65, tasa: 3, necesidad: 3000 };
+
+function leerInputsFI() {
+    const e=document.getElementById('fi-edad'), r=document.getElementById('fi-retiro');
+    const t=document.getElementById('fi-tasa'), n=document.getElementById('fi-necesidad');
+    if (e) finanzasFI.edad = e.value ? parseInt(e.value) : null;
+    if (r) finanzasFI.retiro = parseInt(r.value) || finanzasFI.retiro;
+    if (t) finanzasFI.tasa = parseFloat(t.value) || 0;
+    if (n) finanzasFI.necesidad = parseFloat(n.value) || 0;
+}
+function pintarInputsFI() {
+    const e=document.getElementById('fi-edad'), r=document.getElementById('fi-retiro');
+    const t=document.getElementById('fi-tasa'), n=document.getElementById('fi-necesidad');
+    if (e && document.activeElement!==e) e.value = finanzasFI.edad ?? '';
+    if (r && document.activeElement!==r) r.value = finanzasFI.retiro;
+    if (t && document.activeElement!==t) t.value = finanzasFI.tasa;
+    if (n && document.activeElement!==n) n.value = finanzasFI.necesidad;
+}
+function actualizarFI() {
+    leerInputsFI();
+    renderFI();
+    renderMeta();
+    planearSincronizacion();
+}
+function calcularFI() {
+    const A = finanzasFI.edad, R = finanzasFI.retiro;
+    const r = (finanzasFI.tasa||0)/100;
+    const M = finanzasFI.necesidad||0;
+    if (!A || A<=0 || R<=A || R>=100) return null;
+    const anosHastaRetiro = R - A;
+    const N = 100 - R;
+    const P0 = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0;
+    const necesidadAnual = M*12;
+    const patrimonioAlRetiro = P0 * Math.pow(1+r, anosHastaRetiro);
+    const necesarioAlRetiro = r>0
+        ? necesidadAnual * (1 - Math.pow(1+r,-N)) / r
+        : necesidadAnual * N;
+    const diferencia = patrimonioAlRetiro - necesarioAlRetiro;
+
+    let balance = patrimonioAlRetiro, anosSostenible = 0, agotado = false;
+    const maxSim = 150;
+    for (let i=0; i<maxSim; i++) {
+        balance = balance*(1+r) - necesidadAnual;
+        anosSostenible = i+1;
+        if (balance <= 0) { agotado = true; break; }
+    }
+    return { anosHastaRetiro, N, P0, patrimonioAlRetiro, necesarioAlRetiro, diferencia, anosSostenible, indefinido: !agotado };
+}
+function renderFI() {
+    pintarInputsFI();
+    const el = document.getElementById('fi-resultado');
+    if (!el) return;
+    const r = calcularFI();
+    if (!r) {
+        el.innerHTML = '<div class="chart-empty" style="padding:1rem;">Completá tu edad actual (y verificá que la edad de retiro sea mayor a tu edad y menor a 100) para ver el cálculo.</div>';
+        return;
+    }
+    const texto = r.diferencia >= 0
+        ? `Te sobrarían <strong style="color:#22c55e;">$ ${Math.round(r.diferencia).toLocaleString('en-US')} USD</strong> al llegar a los ${finanzasFI.retiro} años — ya alcanzás la independencia financiera en ese escenario.`
+        : `Te faltarían <strong style="color:#ef4444;">$ ${Math.round(-r.diferencia).toLocaleString('en-US')} USD</strong> al llegar a los ${finanzasFI.retiro} años para cubrir tu necesidad hasta los 100.`;
+    const sostenibilidad = r.indefinido
+        ? `<strong style="color:#22c55e;">Indefinido</strong> — tu dinero seguiría creciendo incluso después de jubilarte`
+        : `<strong style="color:#e5c158;">${r.anosSostenible} años</strong> (se agotaría alrededor de los ${finanzasFI.retiro + r.anosSostenible} años)`;
+
+    el.innerHTML = `
+        <div class="fi-row"><span>Patrimonio actual</span><span>$ ${Math.round(r.P0).toLocaleString('en-US')}</span></div>
+        <div class="fi-row"><span>Proyectado a los ${finanzasFI.retiro} años (${r.anosHastaRetiro} años · ${finanzasFI.tasa}% anual)</span><span>$ ${Math.round(r.patrimonioAlRetiro).toLocaleString('en-US')}</span></div>
+        <div class="fi-row"><span>Necesario hasta los 100 años</span><span>$ ${Math.round(r.necesarioAlRetiro).toLocaleString('en-US')}</span></div>
+        <div class="fi-divider"></div>
+        <div class="fi-conclusion">${texto}</div>
+        <div class="fi-conclusion">Tiempo que tu dinero te sostendría sin trabajar: ${sostenibilidad}</div>
+    `;
+}
+
+// ── Meta Patrimonial (se calcula con Independencia Financiera si está configurada) ──
 function sugerirMeta() {
     const total = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : totalActualUSD();
     const currentYear = new Date().getFullYear();
@@ -958,40 +1074,58 @@ function sugerirMeta() {
     return { amount: Math.round(goal/1000)*1000, year: currentYear+years, custom:false };
 }
 function renderMeta() {
-    if (!metaPatrimonio) {
-        if (!datosListos) {
-            const elS=document.getElementById('meta-sub');
-            if (elS) elS.innerText = 'Cargando…';
-            return;
+    if (!metaPatrimonio || !metaPatrimonio.manualOverride) {
+        const fi = calcularFI();
+        if (fi) {
+            metaPatrimonio = { amount: Math.round(fi.necesarioAlRetiro), year: new Date().getFullYear()+fi.anosHastaRetiro, custom:true, fromFI:true, manualOverride:false };
+        } else if (!metaPatrimonio) {
+            if (!datosListos) {
+                const elS=document.getElementById('meta-sub');
+                if (elS) elS.innerText = 'Cargando…';
+                return;
+            }
+            metaPatrimonio = sugerirMeta();
+            planearSincronizacion();
         }
-        metaPatrimonio = sugerirMeta();
-        planearSincronizacion();
     }
     const total = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0;
     const pctVal = metaPatrimonio.amount>0 ? Math.min(100, (total/metaPatrimonio.amount*100)) : 0;
     const elA=document.getElementById('meta-actual'), elO=document.getElementById('meta-objetivo');
     const elB=document.getElementById('meta-bar-fill'), elP=document.getElementById('meta-pct'), elS=document.getElementById('meta-sub');
+    const elBtn=document.getElementById('btn-meta-edit');
     if (!elA) return;
     elA.innerText = fmtN(total,'USD');
     elO.innerText = '$ '+Math.round(metaPatrimonio.amount).toLocaleString('en-US')+' USD ('+metaPatrimonio.year+')';
     elB.style.width = pctVal.toFixed(1)+'%';
     elP.innerText = pctVal.toFixed(1)+'% alcanzado';
     const yearsLeft = metaPatrimonio.year - new Date().getFullYear();
-    elS.innerText = metaPatrimonio.custom
-        ? `Meta personalizada · ${yearsLeft} años restantes`
-        : `Sugerencia automática · ${yearsLeft} años restantes (editable)`;
+    elS.innerText = metaPatrimonio.manualOverride
+        ? `Meta personalizada manualmente · ${yearsLeft} años restantes`
+        : metaPatrimonio.fromFI
+        ? `Calculado con tu plan de independencia financiera · ${yearsLeft} años restantes`
+        : `Sugerencia automática · ${yearsLeft} años restantes (completá la calculadora de arriba para personalizarla)`;
+    if (elBtn) elBtn.innerText = metaPatrimonio.manualOverride ? '↻ Usar calculadora' : '✏️ Editar';
 }
-function editarMeta() {
+function toggleMetaEdit() {
+    if (metaPatrimonio && metaPatrimonio.manualOverride) {
+        metaPatrimonio.manualOverride = false;
+        renderMeta();
+        planearSincronizacion();
+    } else {
+        editarMetaManual();
+    }
+}
+function editarMetaManual() {
     const cur = metaPatrimonio || sugerirMeta();
     const amountStr = prompt('Meta de patrimonio total en USD:', Math.round(cur.amount));
     if (!amountStr) return;
     const amount = parseInt(amountStr.replace(/[^0-9]/g,'')) || 0;
     if (amount<=0) { alert('Monto inválido.'); return; }
-    const minYear = new Date().getFullYear()+10;
-    const yearStr = prompt(`Año objetivo (mínimo ${minYear}, pensado a largo plazo):`, Math.max(cur.year, minYear));
-    let year = parseInt(yearStr) || minYear;
-    if (year < minYear) { alert(`El año debe ser ${minYear} o posterior (mínimo 10 años a futuro). Se ajustó automáticamente.`); year = minYear; }
-    metaPatrimonio = { amount, year, custom:true };
+    const thisYear = new Date().getFullYear();
+    const yearStr = prompt('Año objetivo:', cur.year || (thisYear+10));
+    let year = parseInt(yearStr) || (thisYear+10);
+    if (year <= thisYear) { alert('El año debe ser posterior al actual.'); return; }
+    metaPatrimonio = { amount, year, custom:true, manualOverride:true };
     renderMeta();
     planearSincronizacion();
 }
@@ -1116,6 +1250,7 @@ async function descargarDesdeNube() {
             historialMensual=[...baseExtra,...d.historial_mensual].sort((a,b)=>a.mes.localeCompare(b.mes));
         }
         if (d?.meta_patrimonio) { metaPatrimonio = d.meta_patrimonio; }
+        if (d?.finanzas_fi) { finanzasFI = d.finanzas_fi; }
         ind.innerText="☁️ Sync"; ind.style.color="#b38728";
         cargarListas(); calcularTodo();
     } catch(e) {
@@ -1143,6 +1278,7 @@ async function sincronizarNube() {
                 tipo_cambio:parseFloat(document.getElementById('tc').value)||18,
                 historial_mensual:historialMensual,
                 meta_patrimonio:metaPatrimonio,
+                finanzas_fi:finanzasFI,
                 updated_at:new Date().toISOString()
             })
         });
@@ -1243,7 +1379,7 @@ window.onload = function() {
                 registrarCambio();
                 autoFreezeAlCambiarMes();
                 datosListos = true;
-                renderChart(); renderProyeccion(); renderDonuts(); renderMeta(); renderRanking();
+                renderFI(); renderChart(); renderProyeccion(); renderDonuts(); renderMeta(); renderRanking();
             }, 600);
         });
     attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
