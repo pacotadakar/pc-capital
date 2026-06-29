@@ -1000,6 +1000,21 @@ function actualizarFI() {
     renderMeta();
     planearSincronizacion();
 }
+function estimarAhorroMensual() {
+    const frozenAll = historialMensual.filter(h => h.mes < mesActual()).sort((a,b)=>a.mes.localeCompare(b.mes));
+    const mesesNecesarios = 12;
+    if (frozenAll.length < mesesNecesarios) {
+        return { valor: 0, confiable: false, mesesDisponibles: frozenAll.length, mesesNecesarios };
+    }
+    const frozen = frozenAll.slice(-mesesNecesarios); // ventana de los últimos 12 meses
+    const n = frozen.length;
+    const xs = frozen.map((_,i)=>i), ys = frozen.map(d=>d.total);
+    const xMean = xs.reduce((a,b)=>a+b,0)/n, yMean = ys.reduce((a,b)=>a+b,0)/n;
+    let num=0, den=0;
+    for (let i=0;i<n;i++){ num+=(xs[i]-xMean)*(ys[i]-yMean); den+=(xs[i]-xMean)**2; }
+    const slope = den!==0 ? num/den : 0; // USD por mes
+    return { valor: Math.max(0, Math.round(slope)), confiable: true, mesesDisponibles: frozenAll.length, mesesNecesarios };
+}
 function calcularFI() {
     const A = finanzasFI.edad, R = finanzasFI.retiro;
     const r = (finanzasFI.tasa||0)/100;
@@ -1009,7 +1024,15 @@ function calcularFI() {
     const N = 100 - R;
     const P0 = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0;
     const necesidadAnual = M*12;
-    const patrimonioAlRetiro = P0 * Math.pow(1+r, anosHastaRetiro);
+
+    const ahorro = estimarAhorroMensual();
+    const ahorroAnual = ahorro.confiable ? ahorro.valor*12 : 0;
+    const crecimientoCapitalActual = P0 * Math.pow(1+r, anosHastaRetiro);
+    const crecimientoAhorro = r>0
+        ? ahorroAnual * ((Math.pow(1+r, anosHastaRetiro) - 1) / r)
+        : ahorroAnual * anosHastaRetiro;
+    const patrimonioAlRetiro = crecimientoCapitalActual + crecimientoAhorro;
+
     const necesarioAlRetiro = r>0
         ? necesidadAnual * (1 - Math.pow(1+r,-N)) / r
         : necesidadAnual * N;
@@ -1022,7 +1045,7 @@ function calcularFI() {
         anosSostenible = i+1;
         if (balance <= 0) { agotado = true; break; }
     }
-    return { anosHastaRetiro, N, P0, patrimonioAlRetiro, necesarioAlRetiro, diferencia, anosSostenible, indefinido: !agotado };
+    return { anosHastaRetiro, N, P0, crecimientoCapitalActual, crecimientoAhorro, patrimonioAlRetiro, necesarioAlRetiro, diferencia, anosSostenible, indefinido: !agotado, ahorro };
 }
 function renderFI() {
     pintarInputsFI();
@@ -1040,8 +1063,13 @@ function renderFI() {
         ? `<strong style="color:#22c55e;">Indefinido</strong> — tu dinero seguiría creciendo incluso después de jubilarte`
         : `<strong style="color:#e5c158;">${r.anosSostenible} años</strong> (se agotaría alrededor de los ${finanzasFI.retiro + r.anosSostenible} años)`;
 
+    const ahorroFila = r.ahorro.confiable
+        ? `<div class="fi-row"><span>Ahorro mensual estimado (últimos 12 meses)</span><span>$ ${r.ahorro.valor.toLocaleString('en-US')}</span></div>`
+        : `<div class="chart-empty" style="padding:0.6rem 0; text-align:left;">📊 Todavía no estimamos tu capacidad de ahorro mensual automáticamente — necesitás 12 meses de historial freezado para que sea confiable (tenés ${r.ahorro.mesesDisponibles} de ${r.ahorro.mesesNecesarios}). Por ahora el cálculo solo proyecta el crecimiento de tu patrimonio actual, sin ahorro adicional.</div>`;
+
     el.innerHTML = `
         <div class="fi-row"><span>Patrimonio actual</span><span>$ ${Math.round(r.P0).toLocaleString('en-US')}</span></div>
+        ${ahorroFila}
         <div class="fi-row"><span>Proyectado a los ${finanzasFI.retiro} años (${r.anosHastaRetiro} años · ${finanzasFI.tasa}% anual)</span><span>$ ${Math.round(r.patrimonioAlRetiro).toLocaleString('en-US')}</span></div>
         <div class="fi-row"><span>Necesario hasta los 100 años</span><span>$ ${Math.round(r.necesarioAlRetiro).toLocaleString('en-US')}</span></div>
         <div class="fi-divider"></div>
