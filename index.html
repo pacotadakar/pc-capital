@@ -465,6 +465,16 @@
 </div>
 
 <script>
+// ── Snapshot del buffer de mes en vivo (para auto-freeze) ──────────────────
+// Se captura ANTES que cualquier otra cosa toque localStorage, porque el
+// primer calcularTodo() del arranque (una vez llegan los datos de la nube)
+// sobreescribe 'pc_live_buffer' con el mes actual. Si no lo guardamos ahora,
+// el chequeo de auto-freeze nunca vería el total del mes anterior.
+const bufferAlCargar = (function() {
+    try { return JSON.parse(localStorage.getItem('pc_live_buffer') || 'null'); }
+    catch (e) { return null; }
+})();
+
 // ── Fecha ──────────────────────────────────────────────────────────────────
 (function mostrarFecha() {
     const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -1221,9 +1231,12 @@ function guardarBufferVivo() {
     localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total, detalle: snapshotDetalle() }));
 }
 function autoFreezeAlCambiarMes() {
-    const bufferRaw=localStorage.getItem('pc_live_buffer');
-    if (!bufferRaw) return;
-    const buffer=JSON.parse(bufferRaw);
+    // Usamos la copia capturada al cargar el script (bufferAlCargar), no la de
+    // localStorage en vivo: calcularTodo() ya la sobreescribió con el mes actual
+    // antes de que este chequeo se ejecute, así que leerla de nuevo aquí siempre
+    // fallaría al llegar el primer día de un mes nuevo.
+    const buffer=bufferAlCargar;
+    if (!buffer) return;
     if (buffer.mes < mesActual() && buffer.total > 0) {
         const yaExiste=historialMensual.find(h=>h.mes===buffer.mes);
         if (!yaExiste) {
