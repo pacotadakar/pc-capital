@@ -93,6 +93,11 @@
         .chart-chg.pos { background:rgba(34,197,94,0.12); color:#22c55e; }
         .chart-chg.neg { background:rgba(239,68,68,0.12); color:#ef4444; }
         .chart-chg.neu { background:rgba(156,163,175,0.1); color:#9ca3af; }
+        .btn-period { background:transparent; border:1px solid #252525; color:#555; font-size:0.62rem;
+            font-weight:700; padding:0.25rem 0.55rem; border-radius:5px; cursor:pointer; }
+        .btn-period.active { background:linear-gradient(180deg,#1c1508 0%,#0c0a04 100%); border-color:var(--gold-dark); color:var(--gold-bright); }
+        [data-theme="light"] .btn-period { border-color:#e6dcc0; color:#a89a6e; }
+        [data-theme="light"] .btn-period.active { background:linear-gradient(180deg,#fff6da 0%,#f3e2ab 100%); border-color:#cdb05a; color:#8a6a12; }
         .chart-period { font-size:0.58rem; color:#3a3a3a; }
         .chart-empty { text-align:center; color:#2a2a2a; font-size:0.7rem; padding:2.5rem 1rem; line-height:1.9; }
         #evolucion-chart, #proyeccion-chart { width:100%; display:block; overflow:visible; }
@@ -320,6 +325,14 @@
                     <button class="btn" onclick="toggleHistEditor()" id="btn-hist-edit" style="font-size:0.6rem;">✏️ Editar</button>
                 </div>
             </div>
+            <!-- Botones de período -->
+            <div id="chart-filters" style="display:flex; gap:0.3rem; margin-bottom:0.7rem; flex-wrap:wrap;">
+                <button class="btn-period" data-p="1M" onclick="setChartPeriodo('1M')">1M</button>
+                <button class="btn-period" data-p="3M" onclick="setChartPeriodo('3M')">3M</button>
+                <button class="btn-period" data-p="6M" onclick="setChartPeriodo('6M')">6M</button>
+                <button class="btn-period active" data-p="1A" onclick="setChartPeriodo('1A')">1A</button>
+                <button class="btn-period" data-p="TODO" onclick="setChartPeriodo('TODO')">Todo</button>
+            </div>
             <div id="chart-container" style="position:relative;">
                 <div class="chart-empty" id="chart-empty" style="display:none;">
                     Presioná <strong style="color:var(--gold-bright)">🔒 Cerrar mes</strong> para comenzar el historial
@@ -465,16 +478,6 @@
 </div>
 
 <script>
-// ── Snapshot del buffer de mes en vivo (para auto-freeze) ──────────────────
-// Se captura ANTES que cualquier otra cosa toque localStorage, porque el
-// primer calcularTodo() del arranque (una vez llegan los datos de la nube)
-// sobreescribe 'pc_live_buffer' con el mes actual. Si no lo guardamos ahora,
-// el chequeo de auto-freeze nunca vería el total del mes anterior.
-const bufferAlCargar = (function() {
-    try { return JSON.parse(localStorage.getItem('pc_live_buffer') || 'null'); }
-    catch (e) { return null; }
-})();
-
 // ── Fecha ──────────────────────────────────────────────────────────────────
 (function mostrarFecha() {
     const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -718,6 +721,37 @@ function calcularTodo() {
 }
 
 // ── Gráfico tipo acciones (Evolución) ──────────────────────────────────────
+let chartPeriodo = '1A'; // default: 1 año
+
+function setChartPeriodo(p) {
+    chartPeriodo = p;
+    document.querySelectorAll('.btn-period').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+    renderChart();
+}
+
+function filtrarPorPeriodo(data) {
+    if (chartPeriodo === 'TODO') return data;
+    const now = new Date();
+    const meses = { '1M':1, '3M':3, '6M':6, '1A':12 }[chartPeriodo] || 12;
+    const desde = new Date(now.getFullYear(), now.getMonth() - meses, 1);
+    const desdeStr = `${desde.getFullYear()}-${String(desde.getMonth()+1).padStart(2,'0')}`;
+    const filtered = data.filter(d => d.mes >= desdeStr);
+    return filtered.length >= 2 ? filtered : data.slice(-2);
+}
+
+function calcularVariacion(data) {
+    // YoY por default: compara con el mismo mes del año anterior si existe
+    const last = data[data.length-1];
+    const lastMes = last.mes; // e.g. "2026-07"
+    const [y, m] = lastMes.split('-').map(Number);
+    const mesAnioAnterior = `${y-1}-${String(m).padStart(2,'0')}`;
+    const puntoAnioAnterior = data.find(d => d.mes === mesAnioAnterior)
+        || data.find(d => d.mes >= `${y-1}-${String(m).padStart(2,'0')}` && d.mes < lastMes)  // aproximado
+        || data[0];
+    return { first: puntoAnioAnterior.total, last: last.total, label: puntoAnioAnterior.mes === data[0].mes && data.length > 2 ? null : 'a/a' };
+}
+
+
 function renderChart() {
     const svg=document.getElementById('evolucion-chart');
     const empty=document.getElementById('chart-empty');
@@ -734,16 +768,20 @@ function renderChart() {
     }
     empty.style.display='none'; svg.style.display='block';
 
-    const frozen = historialMensual.filter(h => h.mes < mesActual()).slice(-17);
+    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).slice(-18);
     const liveTotal = totalActualUSD();
     const livePoint = { mes: mesActual(), total: liveTotal, live: true };
-    const data = [...frozen, livePoint];
+    const allData = [...allFrozen, livePoint];
+    const data = filtrarPorPeriodo(allData);
     const N = data.length;
-    const first = data[0].total, last = data[N-1].total;
+
+    const last = data[N-1].total;
+    const { first, label } = calcularVariacion(data);
     const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
 
     lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
-    chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
+
+    chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}${label?' ('+label+')':''}`;
     chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
     const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
     periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
@@ -1231,12 +1269,9 @@ function guardarBufferVivo() {
     localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total, detalle: snapshotDetalle() }));
 }
 function autoFreezeAlCambiarMes() {
-    // Usamos la copia capturada al cargar el script (bufferAlCargar), no la de
-    // localStorage en vivo: calcularTodo() ya la sobreescribió con el mes actual
-    // antes de que este chequeo se ejecute, así que leerla de nuevo aquí siempre
-    // fallaría al llegar el primer día de un mes nuevo.
-    const buffer=bufferAlCargar;
-    if (!buffer) return;
+    const bufferRaw=localStorage.getItem('pc_live_buffer');
+    if (!bufferRaw) return;
+    const buffer=JSON.parse(bufferRaw);
     if (buffer.mes < mesActual() && buffer.total > 0) {
         const yaExiste=historialMensual.find(h=>h.mes===buffer.mes);
         if (!yaExiste) {
