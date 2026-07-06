@@ -729,26 +729,40 @@ function setChartPeriodo(p) {
     renderChart();
 }
 
-function filtrarPorPeriodo(data) {
-    if (chartPeriodo === 'TODO') return data;
-    const now = new Date();
+function filtrarPorPeriodo(allData) {
+    if (chartPeriodo === 'TODO') return allData;
     const meses = { '1M':1, '3M':3, '6M':6, '1A':12 }[chartPeriodo] || 12;
+    const now = new Date();
     const desde = new Date(now.getFullYear(), now.getMonth() - meses, 1);
     const desdeStr = `${desde.getFullYear()}-${String(desde.getMonth()+1).padStart(2,'0')}`;
-    const filtered = data.filter(d => d.mes >= desdeStr);
-    return filtered.length >= 2 ? filtered : data.slice(-2);
+    const filtered = allData.filter(d => d.mes >= desdeStr);
+    // Si hay menos de 2 puntos en el período, avisa pero no inventa data de otro período
+    return filtered.length >= 2 ? filtered : allData;
 }
 
-function calcularVariacion(data) {
-    // YoY por default: compara con el mismo mes del año anterior si existe
-    const last = data[data.length-1];
-    const lastMes = last.mes; // e.g. "2026-07"
-    const [y, m] = lastMes.split('-').map(Number);
-    const mesAnioAnterior = `${y-1}-${String(m).padStart(2,'0')}`;
-    const puntoAnioAnterior = data.find(d => d.mes === mesAnioAnterior)
-        || data.find(d => d.mes >= `${y-1}-${String(m).padStart(2,'0')}` && d.mes < lastMes)  // aproximado
-        || data[0];
-    return { first: puntoAnioAnterior.total, last: last.total, label: puntoAnioAnterior.mes === data[0].mes && data.length > 2 ? null : 'a/a' };
+function calcularVariacion(filteredData, allData) {
+    const last = filteredData[filteredData.length-1].total;
+    let first, label;
+
+    if (chartPeriodo === '1A' || chartPeriodo === 'TODO') {
+        // Para 1A y Todo: comparar contra el mismo mes del año anterior en el historial COMPLETO
+        const lastMes = filteredData[filteredData.length-1].mes;
+        const [y, mo] = lastMes.split('-').map(Number);
+        const mesAnioAnt = `${y-1}-${String(mo).padStart(2,'0')}`;
+        // buscar mes exacto o el más cercano anterior
+        const sorted = [...allData].sort((a,b) => a.mes.localeCompare(b.mes));
+        const puntoAnt = sorted.find(d => d.mes === mesAnioAnt)
+            || sorted.slice().reverse().find(d => d.mes < mesAnioAnt)
+            || allData[0];
+        first = puntoAnt.total;
+        label = 'vs año ant.';
+    } else {
+        // Para 1M, 3M, 6M: variación desde el primer punto del período filtrado
+        first = filteredData[0].total;
+        label = { '1M':'último mes', '3M':'últimos 3M', '6M':'últimos 6M' }[chartPeriodo] || '';
+    }
+
+    return { first, last, label };
 }
 
 
@@ -775,14 +789,13 @@ function renderChart() {
     const data = filtrarPorPeriodo(allData);
     const N = data.length;
 
-    const last = data[N-1].total;
-    const { first, label } = calcularVariacion(data);
+    const { first, last, label } = calcularVariacion(data, allData);
     const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
 
     lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
-
-    chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}${label?' ('+label+')':''}`;
+    chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
     chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
+    chgEl.title = label;
     const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
     periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
 
