@@ -782,27 +782,20 @@ function renderChart() {
     }
     empty.style.display='none'; svg.style.display='block';
 
-    // Todos los datos históricos (sin límite de corte)
-    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).sort((a,b)=>a.mes.localeCompare(b.mes));
+    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).slice(-18);
     const liveTotal = totalActualUSD();
     const livePoint = { mes: mesActual(), total: liveTotal, live: true };
     const allData = [...allFrozen, livePoint];
-
-    // Período filtra lo que dibuja el gráfico Y define la variación
     const data = filtrarPorPeriodo(allData);
     const N = data.length;
 
-    // Variación: primer punto del período seleccionado → hoy
-    // Para TODO: allData[0] = primer punto histórico. Para otros: primer punto del filtro
-    const totalFirst = data[0].total;
-    const totalLast  = liveTotal;
-    const diff    = totalLast - totalFirst;
-    const diffPct = totalFirst > 0 ? (diff / totalFirst * 100) : 0;
+    const { first, last, label } = calcularVariacion(data, allData);
+    const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
 
-    lastValEl.innerText = '$ '+Math.round(totalLast).toLocaleString('en-US')+' USD';
+    lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
     chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
     chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
-
+    chgEl.title = label;
     const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
     periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
 
@@ -845,11 +838,11 @@ function renderChart() {
         return `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"/>`;
     }).join('');
 
-    const lx=scX(N-1), ly=scY(totalLast);
+    const lx=scX(N-1), ly=scY(last);
     const anchor = lx > W*0.75 ? 'end' : 'start';
     const lxOff = anchor==='end' ? lx-6 : lx+6;
     const lyOff = ly < pad.t+15 ? ly+14 : ly-8;
-    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(totalLast/1000)}k ●</text>`;
+    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(last/1000)}k ●</text>`;
 
     svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
     svg.setAttribute('width',W); svg.setAttribute('height',H);
