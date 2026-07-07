@@ -845,11 +845,11 @@ function renderChart() {
         return `<circle cx="${x}" cy="${y}" r="2.5" fill="#7a5c1e" stroke="#b38728" stroke-width="0.8"/>`;
     }).join('');
 
-    const lx=scX(N-1), ly=scY(last);
+    const lx=scX(N-1), ly=scY(totalLast);
     const anchor = lx > W*0.75 ? 'end' : 'start';
     const lxOff = anchor==='end' ? lx-6 : lx+6;
     const lyOff = ly < pad.t+15 ? ly+14 : ly-8;
-    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(last/1000)}k ●</text>`;
+    const lastLabel = `<text x="${lxOff.toFixed(1)}" y="${lyOff.toFixed(1)}" text-anchor="${anchor}" fill="#e5c158" font-size="9" font-weight="bold" font-family="monospace">$${Math.round(totalLast/1000)}k ●</text>`;
 
     svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
     svg.setAttribute('width',W); svg.setAttribute('height',H);
