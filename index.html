@@ -782,20 +782,27 @@ function renderChart() {
     }
     empty.style.display='none'; svg.style.display='block';
 
-    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).slice(-18);
+    // Todos los datos históricos (sin límite de corte)
+    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).sort((a,b)=>a.mes.localeCompare(b.mes));
     const liveTotal = totalActualUSD();
     const livePoint = { mes: mesActual(), total: liveTotal, live: true };
     const allData = [...allFrozen, livePoint];
+
+    // Período filtra lo que dibuja el gráfico Y define la variación
     const data = filtrarPorPeriodo(allData);
     const N = data.length;
 
-    const { first, last, label } = calcularVariacion(data, allData);
-    const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
+    // Variación: primer punto del período seleccionado → hoy
+    // Para TODO: allData[0] = primer punto histórico. Para otros: primer punto del filtro
+    const totalFirst = data[0].total;
+    const totalLast  = liveTotal;
+    const diff    = totalLast - totalFirst;
+    const diffPct = totalFirst > 0 ? (diff / totalFirst * 100) : 0;
 
-    lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
+    lastValEl.innerText = '$ '+Math.round(totalLast).toLocaleString('en-US')+' USD';
     chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
     chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
-    chgEl.title = label;
+
     const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
     periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
 
