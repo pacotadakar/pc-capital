@@ -782,20 +782,38 @@ function renderChart() {
     }
     empty.style.display='none'; svg.style.display='block';
 
-    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).slice(-18);
+    const allFrozen = historialMensual.filter(h => h.mes < mesActual()).sort((a,b)=>a.mes.localeCompare(b.mes));
     const liveTotal = totalActualUSD();
     const livePoint = { mes: mesActual(), total: liveTotal, live: true };
     const allData = [...allFrozen, livePoint];
     const data = filtrarPorPeriodo(allData);
     const N = data.length;
 
-    const { first, last, label } = calcularVariacion(data, allData);
+    // Variación según período
+    let first;
+    if (chartPeriodo === 'TODO') {
+        // Desde el primer punto histórico
+        first = allData[0].total;
+    } else if (chartPeriodo === '1A') {
+        // YoY: mismo mes del año anterior
+        const [y, mo] = mesActual().split('-').map(Number);
+        const mesAnt = `${y-1}-${String(mo).padStart(2,'0')}`;
+        const sorted = [...allData].sort((a,b)=>a.mes.localeCompare(b.mes));
+        const puntoAnt = sorted.find(d => d.mes === mesAnt)
+            || sorted.slice().reverse().find(d => d.mes < mesAnt)
+            || allData[0];
+        first = puntoAnt.total;
+    } else {
+        // 1M, 3M, 6M: primer punto del período filtrado
+        first = data[0].total;
+    }
+    const last = liveTotal;
     const diff = last - first, diffPct = first > 0 ? (diff/first*100) : 0;
 
     lastValEl.innerText = '$ '+Math.round(last).toLocaleString('en-US')+' USD';
     chgEl.innerText = `${diff>=0?'▲':'▼'} ${Math.abs(diffPct).toFixed(2)}%  ${diff>=0?'+':'-'}$ ${Math.abs(Math.round(diff)).toLocaleString('en-US')}`;
     chgEl.className = 'chart-chg '+(diff>0?'pos':diff<0?'neg':'neu');
-    chgEl.title = label;
+    chgEl.title = '';
     const fmt = m => { const [y,mo]=m.split('-'); const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${ns[parseInt(mo)]} '${y.slice(2)}`; };
     periodEl.innerText = N>=2 ? `${fmt(data[0].mes)} → ${fmt(data[N-1].mes)}` : fmt(data[0].mes);
 
