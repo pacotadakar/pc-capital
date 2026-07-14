@@ -1106,11 +1106,8 @@ function calcularFI() {
 
     const ahorro = estimarAhorroMensual();
     const ahorroAnual = ahorro.confiable ? ahorro.valor*12 : 0;
-    const crecimientoCapitalActual = P0 * Math.pow(1+r, anosHastaRetiro);
-    const crecimientoAhorro = r>0
-        ? ahorroAnual * ((Math.pow(1+r, anosHastaRetiro) - 1) / r)
-        : ahorroAnual * anosHastaRetiro;
-    const patrimonioAlRetiro = crecimientoCapitalActual + crecimientoAhorro;
+    // Pre-retiro: solo sumamos ahorro (sin interés — la app ya trackea el crecimiento real)
+    const patrimonioAlRetiro = P0 + ahorroAnual * anosHastaRetiro;
 
     const necesarioAlRetiro = r>0
         ? necesidadAnual * (1 - Math.pow(1+r,-N)) / r
@@ -1118,13 +1115,13 @@ function calcularFI() {
     const diferencia = patrimonioAlRetiro - necesarioAlRetiro;
 
     let balance = patrimonioAlRetiro, anosSostenible = 0, agotado = false;
-    const maxSim = 150;
+    const maxSim = 200;
     for (let i=0; i<maxSim; i++) {
         balance = balance*(1+r) - necesidadAnual;
         anosSostenible = i+1;
         if (balance <= 0) { agotado = true; break; }
     }
-    return { anosHastaRetiro, N, P0, crecimientoCapitalActual, crecimientoAhorro, patrimonioAlRetiro, necesarioAlRetiro, diferencia, anosSostenible, indefinido: !agotado, ahorro };
+    return { anosHastaRetiro, N, P0, patrimonioAlRetiro, necesarioAlRetiro, diferencia, anosSostenible, indefinido: !agotado, ahorro };
 }
 function renderFI() {
     pintarInputsFI();
@@ -1138,9 +1135,10 @@ function renderFI() {
     const texto = r.diferencia >= 0
         ? `Te sobrarían <strong style="color:#22c55e;">$ ${Math.round(r.diferencia).toLocaleString('en-US')} USD</strong> al llegar a los ${finanzasFI.retiro} años — ya alcanzás la independencia financiera en ese escenario.`
         : `Te faltarían <strong style="color:#ef4444;">$ ${Math.round(-r.diferencia).toLocaleString('en-US')} USD</strong> al llegar a los ${finanzasFI.retiro} años para cubrir tu necesidad hasta los 100.`;
+    const edadAgotamiento = finanzasFI.retiro + r.anosSostenible;
     const sostenibilidad = r.indefinido
-        ? `<strong style="color:#22c55e;">Indefinido</strong> — tu dinero seguiría creciendo incluso después de jubilarte`
-        : `<strong style="color:#e5c158;">${r.anosSostenible} años</strong> (se agotaría alrededor de los ${finanzasFI.retiro + r.anosSostenible} años)`;
+        ? `<strong style="color:#22c55e;">200+ años</strong> (tu dinero seguiría creciendo incluso después de jubilarte)`
+        : `<strong style="color:#e5c158;">${r.anosSostenible} años</strong> (se agotaría alrededor de los ${edadAgotamiento} años)`;
 
     const ahorroFila = r.ahorro.confiable
         ? `<div class="fi-row"><span>Ahorro mensual estimado (últimos 12 meses)</span><span>$ ${r.ahorro.valor.toLocaleString('en-US')}</span></div>`
@@ -1149,8 +1147,8 @@ function renderFI() {
     el.innerHTML = `
         <div class="fi-row"><span>Patrimonio actual</span><span>$ ${Math.round(r.P0).toLocaleString('en-US')}</span></div>
         ${ahorroFila}
-        <div class="fi-row"><span>Proyectado a los ${finanzasFI.retiro} años (${r.anosHastaRetiro} años · ${finanzasFI.tasa}% anual)</span><span>$ ${Math.round(r.patrimonioAlRetiro).toLocaleString('en-US')}</span></div>
-        <div class="fi-row"><span>Necesario hasta los 100 años</span><span>$ ${Math.round(r.necesarioAlRetiro).toLocaleString('en-US')}</span></div>
+        <div class="fi-row"><span>Proyectado al retiro (${r.anosHastaRetiro} años de ahorro, sin interés)</span><span>$ ${Math.round(r.patrimonioAlRetiro).toLocaleString('en-US')}</span></div>
+        <div class="fi-row"><span>Necesario post-retiro hasta los 100 años (${finanzasFI.tasa}% anual)</span><span>$ ${Math.round(r.necesarioAlRetiro).toLocaleString('en-US')}</span></div>
         <div class="fi-divider"></div>
         <div class="fi-conclusion">${texto}</div>
         <div class="fi-conclusion">Tiempo que tu dinero te sostendría sin trabajar: ${sostenibilidad}</div>
