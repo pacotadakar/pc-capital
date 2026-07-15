@@ -415,10 +415,41 @@
             <div id="fi-resultado" style="margin-top:1rem;"></div>
         </section>
 
-        <section class="chart-box">
-            <div class="chart-hdr">
+        <section class="chart-box" id="retiro-chart-box" style="display:none;">
+            <div class="chart-hdr" style="margin-bottom:0.5rem;">
                 <div class="chart-hdr-left">
-                    <div class="section-title" style="margin:0;">🎯 Meta Patrimonial</div>
+                    <div class="section-title" style="margin:0;">📉 Evolución Post-Retiro</div>
+                    <div class="chart-period" id="retiro-chart-period">—</div>
+                </div>
+            </div>
+            <!-- Legend -->
+            <div style="display:flex; gap:1rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:0.35rem; font-size:0.6rem; color:#888;">
+                    <div style="width:22px;height:2.5px;background:linear-gradient(90deg,#6a4c14,#e5c158);border-radius:2px;"></div>Saldo
+                </div>
+                <div style="display:flex; align-items:center; gap:0.35rem; font-size:0.6rem; color:#888;">
+                    <div style="width:22px;height:2px;background:#22c55e;border-radius:2px;"></div>Interés anual
+                </div>
+                <div style="display:flex; align-items:center; gap:0.35rem; font-size:0.6rem; color:#888;">
+                    <div style="width:22px;height:2px;background:#ef4444;border-radius:2px; opacity:0.7;"></div>Gasto anual
+                </div>
+            </div>
+            <div id="retiro-chart-container" style="position:relative;">
+                <svg id="retiro-chart" height="200" style="width:100%;display:block;overflow:visible;"></svg>
+                <!-- Tooltip -->
+                <div id="retiro-tooltip" class="chart-tooltip"></div>
+            </div>
+            <!-- Panel de año seleccionado -->
+            <div id="retiro-panel" style="margin-top:0.75rem; background:#0c0c0c; border:1px solid #1e1e1e; border-radius:6px; padding:0.65rem; display:none;">
+                <div style="font-size:0.6rem; color:var(--gold-mid); font-weight:700; margin-bottom:0.4rem;" id="retiro-panel-title">—</div>
+                <div class="fi-row"><span>Saldo</span><span id="rp-saldo">—</span></div>
+                <div class="fi-row"><span>Interés generado ese año</span><span id="rp-interes">—</span></div>
+                <div class="fi-row"><span>Gasto ese año</span><span id="rp-gasto">—</span></div>
+                <div class="fi-row" id="rp-dif-row"><span>Diferencia</span><span id="rp-dif">—</span></div>
+            </div>
+            <div style="font-size:0.56rem;color:#333;margin-top:0.5rem;text-align:center;">💡 Tocá el gráfico para ver el detalle de cada año</div>
+        </section>
+
                     <div class="chart-period" id="meta-sub">Calculando…</div>
                 </div>
                 <button class="btn btn-gold" id="btn-meta-edit" onclick="toggleMetaEdit()" style="font-size:0.6rem; align-self:flex-start;">✏️ Editar</button>
@@ -511,7 +542,7 @@ function goToPage(i) {
     currentPage = i;
     document.getElementById('pages-track').style.transform = `translateX(-${i*50}%)`;
     document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
-    if (i===1) { renderFI(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); }
+    if (i===1) { renderFI(); renderRetiroChart(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); }
 }
 (function initSwipe() {
     const vp = document.getElementById('pages-viewport');
@@ -627,7 +658,10 @@ function cargarListas() {
                     </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>${sparklineSVG(t,item.id)}
                 </div>
             </div>
-            <div class="input-box"><span>$</span><input type="number" value="${item.v}" oninput="act('${t}',${i},'v',this.value); calcularTodo(); planearSincronizacion()"></div>
+            <div class="input-box"><span>$</span><input type="text" data-raw-value="${item.v}" value="${item.v > 0 ? item.v.toLocaleString('en-US') : '0'}"
+                onfocus="onCurrencyFocus(this)"
+                onblur="onCurrencyBlur(this,'${t}',${i})"
+                oninput="act('${t}',${i},'v',parseFloat(this.value.replace(/[^0-9.]/g,''))||0); calcularTodo(); planearSincronizacion()"></div>
         </div>`).join('');
     document.getElementById('contenedor-mxn').innerHTML = render(portafolioMXN,'mxn');
     document.getElementById('contenedor-usd').innerHTML = render(portafolioUSD,'usd');
@@ -1153,6 +1187,7 @@ function renderFI() {
         <div class="fi-conclusion">${texto}</div>
         <div class="fi-conclusion">Tiempo que tu dinero te sostendría sin trabajar: ${sostenibilidad}</div>
     `;
+    renderRetiroChart();
 }
 
 // ── Meta Patrimonial (se calcula con Independencia Financiera si está configurada) ──
@@ -1235,7 +1270,175 @@ function editarMetaManual() {
     planearSincronizacion();
 }
 
-// ── Ranking de cuentas (Top 5) ───────────────────────────────────────────────
+// ── Gráfico Post-Retiro ────────────────────────────────────────────────────
+let retiroChartData = [];
+
+function renderRetiroChart() {
+    const box = document.getElementById('retiro-chart-box');
+    if (!box) return;
+    const r = calcularFI();
+    if (!r || !finanzasFI.edad || r.patrimonioAlRetiro <= 0) { box.style.display='none'; return; }
+    box.style.display='block';
+
+    const tasa = (finanzasFI.tasa||0)/100;
+    const gastoAnual = (finanzasFI.necesidad||0)*12;
+    const anos = 100 - finanzasFI.retiro;
+    const ct = chartTheme();
+
+    // Simular año a año post-retiro
+    let balance = r.patrimonioAlRetiro;
+    const puntos = [];
+    for (let i=0; i<=anos; i++) {
+        const interesEsteAno = balance * tasa;
+        puntos.push({ ano: i, edad: finanzasFI.retiro+i, saldo: balance, interes: interesEsteAno, gasto: gastoAnual });
+        balance = balance + interesEsteAno - gastoAnual;
+        if (balance <= 0) { puntos.push({ ano:i+1, edad:finanzasFI.retiro+i+1, saldo:0, interes:0, gasto:gastoAnual }); break; }
+    }
+    retiroChartData = puntos;
+
+    const svg = document.getElementById('retiro-chart');
+    const W = Math.max(svg.parentElement.clientWidth||320, 200), H = 200;
+    const pad = {t:14, r:14, b:32, l:58};
+    const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+    const N = puntos.length;
+
+    // Scales
+    const maxSaldo = Math.max(...puntos.map(p=>p.saldo));
+    const maxVal   = Math.max(maxSaldo, gastoAnual) * 1.08;
+    const scX = i => pad.l + (i/(N-1))*iW;
+    const scY = v => pad.t + iH - (v/maxVal)*iH;
+
+    // Crossover point — where interest >= expense
+    const crossover = puntos.find(p => p.interes >= gastoAnual);
+
+    // Saldo area + line
+    const saldoPts = puntos.map((p,i)=>`${scX(i).toFixed(1)},${scY(p.saldo).toFixed(1)}`).join(' ');
+    const saldoFill = `${scX(0).toFixed(1)},${(pad.t+iH).toFixed(1)} ${saldoPts} ${scX(N-1).toFixed(1)},${(pad.t+iH).toFixed(1)}`;
+
+    // Interest line
+    const interPts = puntos.map((p,i)=>`${scX(i).toFixed(1)},${scY(p.interes).toFixed(1)}`).join(' ');
+
+    // Expense line (flat)
+    const gastoY = scY(gastoAnual).toFixed(1);
+    const gastoPts = `${scX(0).toFixed(1)},${gastoY} ${scX(N-1).toFixed(1)},${gastoY}`;
+
+    // Y grid
+    const gridStep = maxVal/3;
+    const yGrid = [0,1,2,3].map(k=>{
+        const v=gridStep*k, y=scY(v);
+        const lbl = v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'k':Math.round(v);
+        return `<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+iW}" y2="${y.toFixed(1)}" stroke="${ct.grid}" stroke-width="1" stroke-dasharray="3,3"/>
+                <text x="${pad.l-4}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="${ct.text}" font-size="8" font-family="monospace">${lbl}</text>`;
+    }).join('');
+
+    // X labels (every 5 years)
+    const xLabels = puntos.filter((_,i)=> i===0 || i===N-1 || puntos[i].edad%10===0).map((p,_,arr)=>{
+        const i = puntos.indexOf(p);
+        return `<text x="${scX(i).toFixed(1)}" y="${H-8}" text-anchor="middle" fill="${ct.text}" font-size="8" font-family="monospace">${p.edad}</text>`;
+    }).join('');
+
+    // Crossover marker
+    let crossoverMark = '';
+    if (crossover) {
+        const ci = puntos.indexOf(crossover);
+        const cx2 = scX(ci), cy2 = scY(crossover.saldo);
+        crossoverMark = `
+            <line x1="${cx2.toFixed(1)}" y1="${pad.t}" x2="${cx2.toFixed(1)}" y2="${(pad.t+iH).toFixed(1)}" stroke="#e5c158" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+            <circle cx="${cx2.toFixed(1)}" cy="${cy2.toFixed(1)}" r="5" fill="#e5c158" opacity="0.25"/>
+            <circle cx="${cx2.toFixed(1)}" cy="${cy2.toFixed(1)}" r="3" fill="#e5c158" stroke="#fcf6ba" stroke-width="1.5"/>
+            <text x="${(cx2+6).toFixed(1)}" y="${(pad.t+10).toFixed(1)}" fill="#e5c158" font-size="7.5" font-family="monospace">✦ edad ${crossover.edad}</text>`;
+    }
+
+    // Period label
+    const periodoEl = document.getElementById('retiro-chart-period');
+    if (periodoEl) periodoEl.innerText = `Desde los ${finanzasFI.retiro} hasta los ${puntos[puntos.length-1].edad} años${crossover ? ` · Autosustentable desde los ${crossover.edad}` : ''}`;
+
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('width',W); svg.setAttribute('height',H);
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="saldoG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#b38728" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#b38728" stop-opacity="0.02"/>
+            </linearGradient>
+            <linearGradient id="saldoLineG" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#6a4c14"/><stop offset="100%" stop-color="#e5c158"/>
+            </linearGradient>
+        </defs>
+        ${yGrid}
+        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="${ct.axisLine}" stroke-width="1"/>
+        <polygon points="${saldoFill}" fill="url(#saldoG)"/>
+        <polyline points="${saldoPts}" fill="none" stroke="url(#saldoLineG)" stroke-width="2" stroke-linejoin="round"/>
+        <polyline points="${interPts}" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="4,2"/>
+        <polyline points="${gastoPts}" fill="none" stroke="#ef4444" stroke-width="1.2" opacity="0.65" stroke-dasharray="3,3"/>
+        ${crossoverMark}
+        ${xLabels}`;
+
+    // Attach tooltip
+    svg.onmousemove = svg.ontouchmove = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const rect = svg.getBoundingClientRect();
+        const ratio = W / rect.width;
+        const relX = (clientX - rect.left) * ratio - pad.l;
+        const idx = Math.max(0, Math.min(N-1, Math.round(relX / (iW/(N-1)))));
+        showRetiroTooltip(idx, clientX, rect);
+    };
+    svg.onmouseleave = () => { document.getElementById('retiro-tooltip').style.display='none'; };
+    svg.ontouchend = () => setTimeout(()=>{ document.getElementById('retiro-tooltip').style.display='none'; }, 1500);
+}
+
+function showRetiroTooltip(idx, clientX, rect) {
+    const p = retiroChartData[idx]; if (!p) return;
+    const tip = document.getElementById('retiro-tooltip');
+    const panel = document.getElementById('retiro-panel');
+    const fmt = v => '$ '+Math.round(v).toLocaleString('en-US');
+
+    // Tooltip flotante
+    const svg = document.getElementById('retiro-chart');
+    if (!svg || !rect) { rect = svg.getBoundingClientRect(); }
+    const N = retiroChartData.length;
+    const W2 = retiroChartData.length > 0 ? (document.getElementById('retiro-chart-box')?.clientWidth||320) : 320;
+    const pad = {t:14, r:14, b:32, l:58};
+    const iW = W2 - pad.l - pad.r;
+    const pxX = pad.l + idx/(N-1)*iW;
+    const ratio = W2 / rect.width;
+    const clamped = Math.max(50, Math.min(pxX/ratio, rect.width-50));
+    tip.style.left = clamped + 'px'; tip.style.display = 'block';
+    tip.innerHTML = `<strong>Edad ${p.edad} · Año ${p.ano}</strong><br>Saldo: ${fmt(p.saldo)}`;
+
+    // Panel inferior
+    panel.style.display = 'block';
+    document.getElementById('retiro-panel-title').innerText = `Edad ${p.edad} · Año ${p.ano} post-retiro`;
+    document.getElementById('rp-saldo').innerText = fmt(p.saldo);
+    document.getElementById('rp-interes').innerText = fmt(p.interes);
+    document.getElementById('rp-gasto').innerText = fmt(p.gasto);
+    const dif = p.interes - p.gasto;
+    const difEl = document.getElementById('rp-dif');
+    difEl.innerText = (dif>=0?'+':'')+fmt(dif);
+    difEl.style.color = dif>=0 ? '#22c55e' : '#ef4444';
+}
+
+// ── Currency format en inputs de categorías ────────────────────────────────
+function formatInputCurrency(input) {
+    const raw = parseFloat(input.dataset.rawValue || input.value.replace(/[^0-9.]/g,'')) || 0;
+    input.dataset.rawValue = raw;
+    input.value = raw > 0 ? raw.toLocaleString('en-US') : '';
+}
+function onCurrencyFocus(input) {
+    const raw = parseFloat(input.dataset.rawValue || '0') || 0;
+    input.value = raw > 0 ? String(raw) : '';
+    input.type = 'number';
+}
+function onCurrencyBlur(input, tipo, indice) {
+    const val = parseFloat(input.value) || 0;
+    input.dataset.rawValue = val;
+    input.type = 'text';
+    input.value = val > 0 ? val.toLocaleString('en-US') : '0';
+    act(tipo, indice, 'v', val);
+    calcularTodo();
+    planearSincronizacion();
+}
+
+
 function renderRanking() {
     const el = document.getElementById('ranking-rows');
     if (!el) return;
@@ -1489,7 +1692,7 @@ window.onload = function() {
         });
     attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
     attachChartTooltip('proyeccion-chart','proyeccion-container', () => chartDataProy);
-    window.addEventListener('resize', () => { renderChart(); renderProyeccion(); });
+    window.addEventListener('resize', () => { renderChart(); renderProyeccion(); renderRetiroChart(); });
 };
 </script>
 </body>
