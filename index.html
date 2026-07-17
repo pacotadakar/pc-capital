@@ -662,10 +662,8 @@ function cargarListas() {
                     </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>${sparklineSVG(t,item.id)}
                 </div>
             </div>
-            <div class="input-box"><span>$</span><input type="text" data-raw-value="${item.v}" value="${item.v > 0 ? item.v.toLocaleString('en-US') : '0'}"
-                onfocus="onCurrencyFocus(this)"
-                onblur="onCurrencyBlur(this,'${t}',${i})"
-                oninput="act('${t}',${i},'v',parseFloat(this.value.replace(/[^0-9.]/g,''))||0); calcularTodo(); planearSincronizacion()"></div>
+            <div class="input-box"><span>$</span><input type="text" inputmode="numeric" data-raw-value="${item.v}" value="${item.v > 0 ? item.v.toLocaleString('en-US') : '0'}"
+                oninput="onCurrencyInput(this,'${t}',${i})"></div>
         </div>`).join('');
     document.getElementById('contenedor-mxn').innerHTML = render(portafolioMXN,'mxn');
     document.getElementById('contenedor-usd').innerHTML = render(portafolioUSD,'usd');
@@ -1422,24 +1420,26 @@ function showRetiroTooltip(idx, clientX, rect) {
 }
 
 // ── Currency format en inputs de categorías ────────────────────────────────
-function formatInputCurrency(input) {
-    const raw = parseFloat(input.dataset.rawValue || input.value.replace(/[^0-9.]/g,'')) || 0;
+function onCurrencyInput(input, tipo, indice) {
+    // Guardamos la posición del cursor antes
+    const cursor = input.selectionStart;
+    const prevLen = input.value.length;
+    // Solo dígitos
+    const raw = parseInt(input.value.replace(/[^0-9]/g, '')) || 0;
     input.dataset.rawValue = raw;
-    input.value = raw > 0 ? raw.toLocaleString('en-US') : '';
-}
-function onCurrencyFocus(input) {
-    const raw = parseFloat(input.dataset.rawValue || '0') || 0;
-    input.value = raw > 0 ? String(raw) : '';
-    input.type = 'number';
-}
-function onCurrencyBlur(input, tipo, indice) {
-    const val = parseFloat(input.value) || 0;
-    input.dataset.rawValue = val;
-    input.type = 'text';
-    input.value = val > 0 ? val.toLocaleString('en-US') : '0';
-    act(tipo, indice, 'v', val);
+    // Formateamos
+    const formatted = raw > 0 ? raw.toLocaleString('en-US') : '';
+    input.value = formatted;
+    // Restauramos cursor (ajustado por comas agregadas/quitadas)
+    const diff = formatted.length - prevLen;
+    try { input.setSelectionRange(cursor + diff, cursor + diff); } catch(e) {}
+    act(tipo, indice, 'v', raw);
     calcularTodo();
     planearSincronizacion();
+}
+function formatInputInit(input, valor) {
+    input.dataset.rawValue = valor;
+    input.value = valor > 0 ? valor.toLocaleString('en-US') : '0';
 }
 
 
