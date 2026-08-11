@@ -1572,6 +1572,7 @@ async function descargarDesdeNube() {
     }
 }
 function planearSincronizacion() {
+    if (!datosListos) return; // ← nunca guardar antes de que la nube haya cargado
     const ind=document.getElementById('cloud-indicator');
     ind.innerText="⏳ Guardando…"; ind.style.color="#eab308";
     clearTimeout(timerSincronizacion);
@@ -1580,6 +1581,15 @@ function planearSincronizacion() {
 async function sincronizarNube() {
     const ind=document.getElementById('cloud-indicator');
     if (!nubeConfigurada()) { ind.innerText="☁️ Sin config"; ind.style.color="#888"; return; }
+    if (!datosListos) return; // ← doble protección
+
+    // Verificar que no estamos guardando todo en cero accidentalmente
+    const totalActual = portafolioMXN.reduce((s,i)=>s+i.v,0) + portafolioUSD.reduce((s,i)=>s+i.v,0);
+    if (totalActual === 0 && historialMensual.length <= 1) {
+        console.warn('Guardado bloqueado: datos parecen vacíos, esperando carga completa');
+        return;
+    }
+
     const {binId,apiKey}=getConfig();
     try {
         const res=await fetch(`https://api.jsonbin.io/v3/b/${binId}`,{
