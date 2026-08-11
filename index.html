@@ -1523,7 +1523,23 @@ function guardarSnapshotMes() {
     if (idx>=0) { historialMensual[idx].total=total; historialMensual[idx].detalle=det; }
     else historialMensual.push({mes,total,detalle:det});
     historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
-    renderChart(); renderProyeccion(); renderDonuts(); planearSincronizacion();
+
+    // Guardar versión completa del portfolio para recuperación
+    if (!window.versionesPortfolio) window.versionesPortfolio = [];
+    const yaExisteVersion = window.versionesPortfolio.find(v=>v.mes===mes);
+    if (!yaExisteVersion) {
+        window.versionesPortfolio.push({
+            mes,
+            total,
+            tc: parseFloat(document.getElementById('tc').value)||18,
+            mxn: JSON.parse(JSON.stringify(portafolioMXN)),
+            usd: JSON.parse(JSON.stringify(portafolioUSD))
+        });
+        // Mantener solo últimas 24 versiones
+        if (window.versionesPortfolio.length > 24) window.versionesPortfolio.shift();
+    }
+
+    renderChart(); renderProyeccion(); renderDonuts(); renderFI(); planearSincronizacion();
     const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const [y,m]=mes.split('-');
     alert(`🔒 ${meses[parseInt(m)-1]} ${y} freezado: $ ${total.toLocaleString('en-US')} USD`);
@@ -1563,6 +1579,7 @@ async function descargarDesdeNube() {
         }
         if (d?.meta_patrimonio) { metaPatrimonio = d.meta_patrimonio; }
         if (d?.finanzas_fi) { finanzasFI = d.finanzas_fi; }
+        if (d?.versiones_portfolio) { window.versionesPortfolio = d.versiones_portfolio; }
         ind.innerText="☁️ Sync"; ind.style.color="#b38728";
         cargarListas(); calcularTodo();
     } catch(e) {
@@ -1599,6 +1616,7 @@ async function sincronizarNube() {
                 valores_mxn:portafolioMXN, valores_usd:portafolioUSD,
                 tipo_cambio:parseFloat(document.getElementById('tc').value)||18,
                 historial_mensual:historialMensual,
+                versiones_portfolio: window.versionesPortfolio||[],
                 meta_patrimonio:metaPatrimonio,
                 finanzas_fi:finanzasFI,
                 updated_at:new Date().toISOString()
@@ -1646,22 +1664,52 @@ function renderHistEditor() {
     const frozen = historialMensual.filter(h => h.mes < mesActual());
     if (frozen.length === 0) {
         rows.innerHTML = '<div style="font-size:0.68rem;color:#333;padding:0.5rem 0;">No hay meses freezados todavía.</div>';
-        return;
+    } else {
+        rows.innerHTML = frozen.map((h) => {
+            const [y, m] = h.mes.split('-');
+            const label = `${mNames[parseInt(m)]} ${y}`;
+            const tieneVersion = (window.versionesPortfolio||[]).find(v=>v.mes===h.mes);
+            return `<div style="display:flex;align-items:center;gap:0.5rem;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:5px;padding:0.45rem 0.6rem;">
+                <span style="font-size:0.7rem;color:#555;min-width:60px;font-family:monospace;">${label}</span>
+                <span style="color:#2a2a2a;font-size:0.7rem;">$</span>
+                <input type="number" value="${h.total}"
+                    style="background:transparent;border:none;color:#ddd;font-weight:700;font-family:monospace;font-size:0.82rem;width:100%;outline:none;text-align:right;"
+                    onchange="editarMesHistorial('${h.mes}', this.value)">
+                ${tieneVersion ? `<button onclick="restaurarVersion('${h.mes}')" style="background:transparent;border:1px solid #3a2a08;color:#b38728;cursor:pointer;font-size:0.6rem;font-weight:bold;padding:0.15rem 0.3rem;border-radius:3px;white-space:nowrap;" title="Restaurar portfolio de este mes">↩ Restaurar</button>` : ''}
+                <button onclick="eliminarMesHistorial('${h.mes}')"
+                    style="background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:0.7rem;font-weight:bold;padding:0 0.2rem;"
+                    onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#2a2a2a'">✕</button>
+            </div>`;
+        }).join('');
     }
-    rows.innerHTML = frozen.map((h) => {
-        const [y, m] = h.mes.split('-');
-        const label  = `${mNames[parseInt(m)]} ${y}`;
-        return `<div style="display:flex;align-items:center;gap:0.5rem;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:5px;padding:0.45rem 0.6rem;">
-            <span style="font-size:0.7rem;color:#555;min-width:60px;font-family:monospace;">${label}</span>
-            <span style="color:#2a2a2a;font-size:0.7rem;">$</span>
-            <input type="number" value="${h.total}"
-                style="background:transparent;border:none;color:#ddd;font-weight:700;font-family:monospace;font-size:0.82rem;width:100%;outline:none;text-align:right;"
-                onchange="editarMesHistorial('${h.mes}', this.value)">
-            <button onclick="eliminarMesHistorial('${h.mes}')"
-                style="background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:0.7rem;font-weight:bold;padding:0 0.2rem;"
-                onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#2a2a2a'">✕</button>
+
+    // Sección de versiones guardadas
+    const versiones = window.versionesPortfolio||[];
+    if (versiones.length > 0) {
+        const vHTML = versiones.slice().reverse().map(v => {
+            const [y,m] = v.mes.split('-');
+            return `<div style="display:flex;justify-content:space-between;align-items:center;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:5px;padding:0.4rem 0.6rem;font-size:0.68rem;">
+                <span style="color:#666;font-family:monospace;">${mNames[parseInt(m)]} ${y}</span>
+                <span style="color:#888;font-family:monospace;">$ ${Math.round(v.total).toLocaleString('en-US')}</span>
+                <button onclick="restaurarVersion('${v.mes}')" style="background:transparent;border:1px solid #3a2a08;color:#b38728;cursor:pointer;font-size:0.6rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;">↩ Restaurar</button>
+            </div>`;
+        }).join('');
+        rows.innerHTML += `<div style="margin-top:0.8rem;">
+            <div style="font-size:0.58rem;color:#444;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:0.4rem;">📦 Versiones guardadas (portfolio completo)</div>
+            <div style="display:flex;flex-direction:column;gap:0.35rem;">${vHTML}</div>
         </div>`;
-    }).join('');
+    }
+}
+
+function restaurarVersion(mes) {
+    const version = (window.versionesPortfolio||[]).find(v=>v.mes===mes);
+    if (!version) { alert('No hay versión guardada para ese mes.'); return; }
+    if (!confirm(`¿Restaurar el portfolio completo del ${mes}?\nEsto reemplazará todos los valores actuales.\nTotal: $ ${Math.round(version.total).toLocaleString('en-US')} USD`)) return;
+    portafolioMXN = JSON.parse(JSON.stringify(version.mxn));
+    portafolioUSD = JSON.parse(JSON.stringify(version.usd));
+    document.getElementById('tc').value = version.tc || 18;
+    cargarListas(); calcularTodo(); planearSincronizacion();
+    alert(`✅ Portfolio restaurado al estado de ${mes}`);
 }
 function editarMesHistorial(mes, valor) {
     const total = parseInt(valor) || 0;
