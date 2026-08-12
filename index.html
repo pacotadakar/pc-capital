@@ -659,7 +659,7 @@ function cargarListas() {
                         ${t==='mxn'?`<option value="24 hs" ${item.l==='24 hs'?'selected':''}>24 hs</option>`:''}
                         <option value="Annual" ${item.l==='Annual'?'selected':''}>Annual</option>
                         <option value="Retirement" ${item.l==='Retirement'?'selected':''}>Retirement</option>
-                    </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>${sparklineSVG(t,item.id)}
+                    </select> • <span class="share-badge" id="share-${t}-${i}">0%</span>${sparklineSVG(t,item.id)}${deltaLMLY(t,item.id,item.v)}
                 </div>
             </div>
             <div class="input-box"><span>$</span><input type="text" inputmode="numeric" data-raw-value="${item.v}" value="${item.v > 0 ? item.v.toLocaleString('en-US') : '0'}"
@@ -1443,6 +1443,80 @@ function formatInputInit(input, valor) {
 }
 
 
+// ── Delta LM / LY por categoría ────────────────────────────────────────────
+function getPrevMes(mesesAtras) {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - mesesAtras, 1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function deltaLMLY(tipo, id, valorActual) {
+    const versiones = (window.versionesPortfolio||[]).slice().sort((a,b)=>a.mes.localeCompare(b.mes));
+    if (versiones.length === 0) return '';
+    const mesLM = getPrevMes(1);
+    const mesLY = getPrevMes(12);
+    function getVal(mesBuscar) {
+        const v = versiones.slice().reverse().find(v2 => v2.mes <= mesBuscar);
+        if (!v) return null;
+        const arr = tipo==='mxn' ? v.mxn : v.usd;
+        const item = (arr||[]).find(it=>it.id===id);
+        return item ? item.v : null;
+    }
+    const tags = [];
+    const valLM = getVal(mesLM);
+    if (valLM !== null && (valLM > 0 || valorActual > 0)) {
+        const d = valorActual - valLM;
+        const pct = valLM > 0 ? (d/valLM*100).toFixed(1) : '—';
+        const col = d>=0?'#22c55e':'#ef4444';
+        tags.push(`<span style="color:${col};font-size:0.54rem;font-weight:700;">${d>=0?'+':''}${pct}% LM</span>`);
+    }
+    const valLY = getVal(mesLY);
+    if (valLY !== null && (valLY > 0 || valorActual > 0)) {
+        const d = valorActual - valLY;
+        const pct = valLY > 0 ? (d/valLY*100).toFixed(1) : '—';
+        const col = d>=0?'#22c55e':'#ef4444';
+        tags.push(`<span style="color:${col};font-size:0.54rem;font-weight:700;">${d>=0?'+':''}${pct}% LY</span>`);
+    }
+    return tags.length ? ' ' + tags.join(' ') : '';
+}
+
+// ── Evolución por categoría (Top 5) ─────────────────────────────────────────
+function renderCategoryEvolution() {
+    const el = document.getElementById('cat-evolution-box');
+    if (!el) return;
+    const versiones = (window.versionesPortfolio||[]).slice().sort((a,b)=>a.mes.localeCompare(b.mes));
+    if (versiones.length < 2) { el.style.display='none'; return; }
+    el.style.display='block';
+    const tc=(ultimoCalculo&&ultimoCalculo.tc)?ultimoCalculo.tc:18;
+    const mNames=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const COLORS=['#e5c158','#22c55e','#60a5fa','#f97316','#a855f7'];
+    const allItems=[...portafolioMXN.map(it=>({...it,tipo:'mxn'})),...portafolioUSD.map(it=>({...it,tipo:'usd'}))]
+        .filter(it=>it.v>0&&it.id).sort((a,b)=>(b.tipo==='mxn'?b.v/tc:b.v)-(a.tipo==='mxn'?a.v/tc:a.v)).slice(0,5);
+    const series=allItems.map((item,ci)=>({
+        name:item.c,color:COLORS[ci],
+        vals:versiones.map(v=>{const arr=item.tipo==='mxn'?v.mxn:v.usd;const f=(arr||[]).find(it=>it.id===item.id);const val=f?f.v:0;return item.tipo==='mxn'?val/tc:val;})
+    }));
+    const allVals=series.flatMap(s=>s.vals).filter(v=>v>0);
+    if(!allVals.length){el.style.display='none';return;}
+    const maxV=Math.max(...allVals)*1.1||1;
+    const svg=document.getElementById('cat-evolution-chart');if(!svg)return;
+    const ct=chartTheme();
+    const W=Math.max(svg.parentElement.clientWidth||320,200),H=190,pad={t:14,r:14,b:32,l:58};
+    const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b,N=versiones.length;
+    const scX=i=>N<2?pad.l+iW/2:pad.l+(i/(N-1))*iW;
+    const scY=v=>pad.t+iH-((v/maxV)*iH);
+    const gridStep=maxV/3;
+    const yGrid=[0,1,2,3].map(k=>{const v=gridStep*k,y=scY(v);const lbl=v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'k':Math.round(v);
+        return`<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+iW}" y2="${y.toFixed(1)}" stroke="${ct.grid}" stroke-width="1" stroke-dasharray="3,3"/><text x="${pad.l-4}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="${ct.text}" font-size="8" font-family="monospace">${lbl}</text>`;}).join('');
+    const step=N>8?2:1;
+    const xLabels=versiones.map((v,i)=>{if(i%step!==0&&i!==N-1)return'';const[y2,mo]=v.mes.split('-');return`<text x="${scX(i).toFixed(1)}" y="${H-8}" text-anchor="middle" fill="${ct.text}" font-size="7.5" font-family="monospace">${mNames[parseInt(mo)]}'${y2.slice(2)}</text>`;}).join('');
+    const lines=series.map(s=>{const pts=s.vals.map((v,i)=>`${scX(i).toFixed(1)},${scY(v).toFixed(1)}`).join(' ');return`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;}).join('');
+    const dots=series.map(s=>{const last=s.vals[N-1],x=scX(N-1).toFixed(1),y=scY(last).toFixed(1);return`<circle cx="${x}" cy="${y}" r="3" fill="${s.color}" stroke="#0a0a0a" stroke-width="1"/>`;}).join('');
+    const legend=document.getElementById('cat-evolution-legend');
+    if(legend)legend.innerHTML=series.map(s=>`<div style="display:flex;align-items:center;gap:0.35rem;font-size:0.6rem;color:#888;"><div style="width:16px;height:2px;background:${s.color};border-radius:1px;flex-shrink:0;"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</span></div>`).join('');
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('width',W);svg.setAttribute('height',H);
+    svg.innerHTML=`${yGrid}<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="${ct.axisLine}" stroke-width="1"/>${lines}${dots}${xLabels}`;
+}
+
 function renderRanking() {
     const el = document.getElementById('ranking-rows');
     if (!el) return;
@@ -1513,6 +1587,19 @@ function autoFreezeAlCambiarMes() {
         if (!yaExiste) {
             historialMensual.push({ mes: buffer.mes, total: buffer.total, detalle: buffer.detalle||null });
             historialMensual.sort((a,b)=>a.mes.localeCompare(b.mes));
+            // También guardar versión completa del portfolio si la tenemos en el buffer
+            if (!window.versionesPortfolio) window.versionesPortfolio = [];
+            const yaExisteVersion = window.versionesPortfolio.find(v=>v.mes===buffer.mes);
+            if (!yaExisteVersion && portafolioMXN.some(i=>i.v>0) || portafolioUSD.some(i=>i.v>0)) {
+                window.versionesPortfolio.push({
+                    mes: buffer.mes,
+                    total: buffer.total,
+                    tc: parseFloat(document.getElementById('tc').value)||18,
+                    mxn: JSON.parse(JSON.stringify(portafolioMXN)),
+                    usd: JSON.parse(JSON.stringify(portafolioUSD))
+                });
+                if (window.versionesPortfolio.length > 24) window.versionesPortfolio.shift();
+            }
             planearSincronizacion();
         }
     }
