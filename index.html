@@ -472,6 +472,13 @@
             <div id="ranking-rows"></div>
         </section>
 
+        <section class="chart-box" id="cat-evolution-box" style="display:none;">
+            <div class="section-title" style="margin-bottom:0.5rem;">📊 Evolución por Categoría (Top 5 USD)</div>
+            <div id="cat-evolution-legend" style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.75rem;"></div>
+            <svg id="cat-evolution-chart" height="190" style="width:100%;display:block;overflow:visible;"></svg>
+            <div style="font-size:0.56rem;color:#333;margin-top:0.5rem;text-align:center;">Basado en versiones guardadas al cerrar cada mes</div>
+        </section>
+
         <section class="chart-box">
             <div class="section-title" style="margin-bottom:1rem;">🥇 Distribución por Moneda</div>
             <div class="donut-row">
@@ -546,7 +553,7 @@ function goToPage(i) {
     currentPage = i;
     document.getElementById('pages-track').style.transform = `translateX(-${i*50}%)`;
     document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
-    if (i===1) { renderFI(); renderRetiroChart(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); }
+    if (i===1) { renderFI(); renderRetiroChart(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); renderCategoryEvolution(); }
 }
 (function initSwipe() {
     const vp = document.getElementById('pages-viewport');
@@ -1841,7 +1848,7 @@ window.onload = function() {
         });
     attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
     attachChartTooltip('proyeccion-chart','proyeccion-container', () => chartDataProy);
-    window.addEventListener('resize', () => { renderChart(); renderProyeccion(); renderRetiroChart(); });
+    window.addEventListener('resize', () => { renderChart(); renderProyeccion(); renderRetiroChart(); renderCategoryEvolution(); });
 };
 </script>
 </body>
