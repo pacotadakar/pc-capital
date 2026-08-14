@@ -172,7 +172,9 @@
         .btn-modal-save { background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold-mid) 100%); color:#000;
             font-weight:900; font-size:0.78rem; border:none; padding:0.62rem 1.2rem; border-radius:5px; cursor:pointer; width:100%; }
 
-        /* ── Solo lectura ── */
+        .row-item.drag-over { border-color:var(--gold-mid) !important; background:linear-gradient(180deg,#1c150a 0%,#141008 100%) !important; }
+        .row-item.dragging { opacity:0.4; }
+        .drag-handle:active { cursor:grabbing; }
         body.readonly .input-inline,
         body.readonly .input-sub,
         body.readonly .input-box input,
@@ -255,6 +257,61 @@
 </head>
 <body>
 
+<!-- ── Splash motivacional ── -->
+<div id="splash-modal" style="display:none;position:fixed;inset:0;background:rgba(3,3,3,0.96);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem;padding:2rem;text-align:center;">
+    <div style="font-size:2rem;">✦</div>
+    <p id="splash-quote" style="font-size:1.05rem;font-weight:600;color:#e5c158;line-height:1.6;max-width:360px;font-style:italic;">"..."</p>
+    <p id="splash-author" style="font-size:0.7rem;color:#666;letter-spacing:0.1em;text-transform:uppercase;">—</p>
+    <button onclick="cerrarSplash()" style="margin-top:0.5rem;background:transparent;border:1px solid #2a2a2a;color:#555;font-size:0.7rem;padding:0.5rem 1.5rem;border-radius:20px;cursor:pointer;font-weight:600;">Continuar →</button>
+</div>
+
+<!-- ── Alerta de desvío ── -->
+<div id="alert-banner" style="display:none;background:rgba(239,68,68,0.12);border:1px solid #ef4444;border-radius:8px;padding:0.7rem 1rem;margin-bottom:0.75rem;display:none;align-items:center;justify-content:space-between;gap:0.75rem;">
+    <span style="font-size:0.72rem;color:#ef4444;font-weight:700;" id="alert-banner-text">⚠️ —</span>
+    <button onclick="cerrarAlerta()" style="background:transparent;border:none;color:#ef4444;cursor:pointer;font-size:0.9rem;font-weight:bold;">✕</button>
+</div>
+
+<!-- ── Toast de celebración ── -->
+<div id="celebration-toast" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#1c150a,#0c0a04);border:2px solid var(--gold-mid);border-radius:16px;padding:1.5rem 2rem;text-align:center;z-index:990;box-shadow:0 8px 40px rgba(179,135,40,0.4);max-width:300px;width:88%;">
+    <div style="font-size:2.5rem;margin-bottom:0.5rem;">🎉</div>
+    <p id="toast-text" style="font-size:0.9rem;font-weight:800;color:#e5c158;line-height:1.5;"></p>
+    <button onclick="cerrarCelebracion()" style="margin-top:1rem;background:linear-gradient(180deg,#e5c158,#b38728);color:#000;border:none;padding:0.45rem 1.2rem;border-radius:20px;font-weight:900;font-size:0.75rem;cursor:pointer;">¡Genial!</button>
+</div>
+
+<!-- ── Confetti canvas ── -->
+<canvas id="confetti-canvas" style="display:none;position:fixed;inset:0;pointer-events:none;z-index:989;"></canvas>
+
+<!-- ── Modal de Alertas ── -->
+<div id="alertas-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:999;align-items:center;justify-content:center;">
+    <div class="modal-box" style="max-width:380px;">
+        <h2>⚙️ Alertas y Celebraciones</h2>
+        <div style="margin-bottom:1rem;">
+            <div style="font-size:0.68rem;color:#888;margin-bottom:0.4rem;">⚠️ Alertar si el patrimonio cae más de:</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <input id="alerta-pct" type="number" class="modal-input" value="5" min="1" max="50" style="width:80px;margin:0;text-align:center;font-size:1rem;font-weight:800;color:#ef4444;">
+                <span style="color:#888;font-size:0.8rem;">% vs mes anterior</span>
+            </div>
+        </div>
+        <div style="margin-bottom:1.25rem;">
+            <div style="font-size:0.68rem;color:#888;margin-bottom:0.4rem;">🎉 Celebrar si el patrimonio sube más de:</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="color:#888;font-size:0.8rem;">$</span>
+                <input id="celebracion-usd" type="number" class="modal-input" value="10000" min="1000" style="width:120px;margin:0;text-align:center;font-size:1rem;font-weight:800;color:#22c55e;">
+                <span style="color:#888;font-size:0.8rem;">USD vs mes anterior</span>
+            </div>
+        </div>
+        <div style="margin-bottom:1.25rem;">
+            <div style="font-size:0.68rem;color:#888;margin-bottom:0.4rem;">💬 Mostrar frase motivacional al abrir:</div>
+            <div style="display:flex;gap:0.5rem;">
+                <button onclick="setSplashPref(true)" id="splash-on-btn" class="btn btn-gold" style="flex:1;font-size:0.72rem;">✅ Sí</button>
+                <button onclick="setSplashPref(false)" id="splash-off-btn" class="btn" style="flex:1;font-size:0.72rem;">❌ No</button>
+            </div>
+        </div>
+        <button class="btn-modal-save" onclick="guardarAlertas()">💾 Guardar</button>
+        <button onclick="cerrarAlertas()" style="width:100%;background:transparent;border:none;color:#555;font-size:0.72rem;margin-top:0.5rem;cursor:pointer;padding:0.3rem;">Cancelar</button>
+    </div>
+</div>
+
 <div id="setup-modal">
     <div class="modal-box">
         <h2>⚙️ Configurar Sincronización</h2>
@@ -284,6 +341,7 @@
         <div id="cloud-indicator" class="cloud-status" style="color:#eab308;">⏳</div>
         <button class="btn btn-gold" onclick="abrirConfigModal()">☁️</button>
         <button id="btn-readonly" class="btn" onclick="toggleReadOnly()" title="Modo solo lectura">🔒</button>
+        <button class="btn btn-gold" onclick="abrirAlertas()" title="Alertas y celebraciones">⚙️</button>
         <button class="btn btn-gold" onclick="window.print()">📄</button>
     </div>
 
@@ -291,6 +349,7 @@
 </header>
 
 <div id="readonly-banner">🔒 MODO SOLO LECTURA — tocá el candado para editar</div>
+<div id="alert-banner-container"></div>
 
 <div class="pager-dots">
     <span class="dot active" data-i="0" onclick="goToPage(0)"></span>
@@ -673,7 +732,11 @@ function sparklineSVG(tipo, id) {
 function cargarListas() {
     ensureIds(portafolioMXN); ensureIds(portafolioUSD);
     const render = (arr,t) => arr.map((item,i) => `
-        <div class="row-item">
+        <div class="row-item" draggable="true" data-tipo="${t}" data-idx="${i}"
+            ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event,'${t}')" ondragend="onDragEnd(event)">
+            <div style="display:flex;flex-direction:column;align-items:center;cursor:grab;color:#2e2e3e;padding:0 2px;flex-shrink:0;" class="drag-handle">
+                <span style="font-size:0.55rem;line-height:0.9;">⠿</span>
+            </div>
             <div class="row-actions">
                 <button class="btn-mini" onclick="reordenar('${t}',${i},-1)">▲</button>
                 <button class="btn-mini" onclick="reordenar('${t}',${i},1)">▼</button>
@@ -721,7 +784,190 @@ function eliminar(tipo,indice) {
     cargarListas(); calcularTodo(); planearSincronizacion();
 }
 
-// ── Modo solo lectura ──────────────────────────────────────────────────────
+// ── Configuración de alertas ──────────────────────────────────────────────
+let configAlertas = { alertaPct: 5, celebracionUSD: 10000, splash: true };
+
+function abrirAlertas() {
+    document.getElementById('alerta-pct').value = configAlertas.alertaPct;
+    document.getElementById('celebracion-usd').value = configAlertas.celebracionUSD;
+    actualizarSplashBtns();
+    document.getElementById('alertas-modal').style.display = 'flex';
+}
+function cerrarAlertas() { document.getElementById('alertas-modal').style.display = 'none'; }
+function setSplashPref(val) { configAlertas.splash = val; actualizarSplashBtns(); }
+function actualizarSplashBtns() {
+    document.getElementById('splash-on-btn').style.opacity  = configAlertas.splash ? '1' : '0.4';
+    document.getElementById('splash-off-btn').style.opacity = configAlertas.splash ? '0.4' : '1';
+}
+function guardarAlertas() {
+    configAlertas.alertaPct     = parseFloat(document.getElementById('alerta-pct').value) || 5;
+    configAlertas.celebracionUSD = parseFloat(document.getElementById('celebracion-usd').value) || 10000;
+    localStorage.setItem('pc_alertas', JSON.stringify(configAlertas));
+    cerrarAlertas();
+}
+function cargarConfigAlertas() {
+    const raw = localStorage.getItem('pc_alertas');
+    if (raw) try { configAlertas = {...configAlertas, ...JSON.parse(raw)}; } catch(e) {}
+}
+
+// ── Alerta de desvío ─────────────────────────────────────────────────────
+function cerrarAlerta() {
+    const b = document.getElementById('alert-banner');
+    if (b) b.style.display = 'none';
+    sessionStorage.setItem('alert_dismissed', '1');
+}
+function verificarAlertaDevio() {
+    if (sessionStorage.getItem('alert_dismissed')) return;
+    const versiones = (window.versionesPortfolio||[]).slice().sort((a,b)=>a.mes.localeCompare(b.mes));
+    if (versiones.length === 0) return;
+    const last = versiones[versiones.length-1];
+    const actual = (ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0;
+    if (actual === 0 || last.total === 0) return;
+    const caida = ((last.total - actual) / last.total) * 100;
+    if (caida >= configAlertas.alertaPct) {
+        const banner = document.getElementById('alert-banner');
+        if (!banner) return;
+        document.getElementById('alert-banner-text').innerHTML =
+            `⚠️ Tu patrimonio bajó <strong>$${Math.round(last.total-actual).toLocaleString('en-US')}</strong> (-${caida.toFixed(1)}%) vs ${last.mes}`;
+        banner.style.display = 'flex';
+        const container = document.getElementById('alert-banner-container');
+        if (container) container.appendChild(banner);
+    }
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────
+function lanzarConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    canvas.style.display = 'block';
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    const colors = ['#e5c158','#fcf6ba','#b38728','#ffffff','#f0d060','#22c55e'];
+    const pieces = Array.from({length:120}, () => ({
+        x: Math.random()*canvas.width, y: -20,
+        w: Math.random()*8+4, h: Math.random()*12+6,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        angle: Math.random()*360,
+        vx: (Math.random()-0.5)*4, vy: Math.random()*4+3,
+        va: (Math.random()-0.5)*8
+    }));
+    let frame = 0;
+    const max = 120;
+    function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        pieces.forEach(p => {
+            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle*Math.PI/180);
+            ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, 1-(frame/max));
+            ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+            ctx.restore();
+            p.x+=p.vx; p.y+=p.vy; p.angle+=p.va; p.vy+=0.08;
+        });
+        frame++;
+        if (frame < max+40) requestAnimationFrame(draw);
+        else { ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display='none'; }
+    }
+    draw();
+}
+
+// ── Celebración de hitos ──────────────────────────────────────────────────
+let yaFestejado = false;
+function cerrarCelebracion() {
+    document.getElementById('celebration-toast').style.display='none';
+}
+function verificarCelebracion(pUSD) {
+    const versiones = (window.versionesPortfolio||[]).slice().sort((a,b)=>a.mes.localeCompare(b.mes));
+    if (versiones.length === 0) return;
+    const last = versiones[versiones.length-1];
+    const diff = pUSD - last.total;
+    if (diff >= configAlertas.celebracionUSD) {
+        if (yaFestejado) return;
+        yaFestejado = true;
+        const toast = document.getElementById('celebration-toast');
+        document.getElementById('toast-text').innerHTML =
+            `<span style="font-size:1.1rem;">+$${Math.round(diff).toLocaleString('en-US')} USD</span><br>vs ${last.mes}<br><span style="font-size:0.75rem;color:#b38728;">¡Sigue así, campeón! 🏆</span>`;
+        toast.style.display = 'block';
+        lanzarConfetti();
+    } else {
+        yaFestejado = false;
+    }
+}
+
+// ── Frases motivacionales ─────────────────────────────────────────────────
+const FRASES = [
+    { q: "El hombre que mueve montañas comienza cargando pequeñas piedras.", a: "Confucio" },
+    { q: "No es rico el que tiene mucho, sino el que necesita poco.", a: "Séneca" },
+    { q: "El mundo no te da lo que mereces, te da lo que exiges.", a: "Rocky Balboa" },
+    { q: "No es cuánto ganas, sino cuánto conservas y durante cuánto tiempo lo haces trabajar.", a: "Robert Kiyosaki" },
+    { q: "La riqueza no consiste en tener grandes posesiones, sino en tener pocas necesidades.", a: "Epicteto" },
+    { q: "Cada golpe que recibo me hace más fuerte. Eso es todo lo que sé.", a: "Rocky Balboa" },
+    { q: "Piensa en lo que tienes y no en lo que deseas.", a: "Marco Aurelio" },
+    { q: "La disciplina es el puente entre metas y logros.", a: "Jim Rohn" },
+    { q: "Alguien está sentado a la sombra hoy porque alguien plantó un árbol hace mucho tiempo.", a: "Warren Buffett" },
+    { q: "El tiempo en el mercado supera al momento perfecto de entrada.", a: "Warren Buffett" },
+    { q: "No es el más fuerte ni el más inteligente quien sobrevive, sino el que mejor se adapta al cambio.", a: "Charles Darwin" },
+    { q: "La vida no te golpea tan fuerte como lo hace la gente. Pero tú tampoco cedes. ¿Eso es lo que te define?", a: "Rocky Balboa" },
+    { q: "Actúa como si lo que haces marcara la diferencia. Lo marca.", a: "William James" },
+    { q: "El éxito no es el dinero. El éxito es tener opciones.", a: "Chris Rock" },
+    { q: "La fortuna ayuda a los valientes.", a: "Virgilio" },
+    { q: "Haz lo que puedas, con lo que tienes, donde estás.", a: "Theodore Roosevelt" },
+    { q: "No cuentes los días, haz que los días cuenten.", a: "Muhammad Ali" },
+    { q: "La mayor gloria no es nunca caer, sino levantarse cada vez que caemos.", a: "Confucio" },
+    { q: "El sacrificio de hoy es la fortaleza de mañana.", a: "Rocky Balboa" },
+    { q: "El tiempo es el amigo del negocio maravilloso y el enemigo del mediocre.", a: "Warren Buffett" },
+    { q: "Tolera lo incontrolable, transforma lo controlable.", a: "Marco Aurelio" },
+    { q: "Un hombre puede ser destruido pero no derrotado.", a: "Ernest Hemingway" },
+    { q: "La riqueza real es la capacidad de vivir como quieras.", a: "Henry David Thoreau" },
+    { q: "Todo lo que escuchas es una opinión, no un hecho. Todo lo que ves es una perspectiva, no la verdad.", a: "Marco Aurelio" },
+    { q: "Primero construye tu árbol del dinero. Luego siéntate a su sombra.", a: "Anónimo" }
+];
+let splashMostrado = false;
+function mostrarSplash() {
+    if (!configAlertas.splash) return;
+    if (splashMostrado) return;
+    if (sessionStorage.getItem('splash_shown')) return;
+    splashMostrado = true;
+    sessionStorage.setItem('splash_shown','1');
+    const frase = FRASES[Math.floor(Math.random()*FRASES.length)];
+    document.getElementById('splash-quote').innerText = `"${frase.q}"`;
+    document.getElementById('splash-author').innerText = `— ${frase.a}`;
+    const modal = document.getElementById('splash-modal');
+    modal.style.display = 'flex';
+}
+function cerrarSplash() {
+    document.getElementById('splash-modal').style.display = 'none';
+}
+
+
+let dragSrcIdx = null, dragSrcTipo = null;
+
+function onDragStart(e) {
+    const row = e.currentTarget;
+    dragSrcIdx  = parseInt(row.dataset.idx);
+    dragSrcTipo = row.dataset.tipo;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.row-item.drag-over').forEach(r=>r.classList.remove('drag-over'));
+    e.currentTarget.classList.add('drag-over');
+}
+function onDrop(e, tipo) {
+    e.preventDefault();
+    const destIdx = parseInt(e.currentTarget.dataset.idx);
+    if (dragSrcTipo !== tipo || dragSrcIdx === destIdx) return;
+    const arr = tipo === 'mxn' ? portafolioMXN : portafolioUSD;
+    const [moved] = arr.splice(dragSrcIdx, 1);
+    arr.splice(destIdx, 0, moved);
+    cargarListas(); calcularTodo(); planearSincronizacion();
+}
+function onDragEnd(e) {
+    document.querySelectorAll('.row-item').forEach(r=>{ r.classList.remove('dragging','drag-over'); });
+    dragSrcIdx = null; dragSrcTipo = null;
+}
+
+
 let modoSoloLectura = false;
 function toggleReadOnly() {
     modoSoloLectura = !modoSoloLectura;
