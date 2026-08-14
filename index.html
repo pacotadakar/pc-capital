@@ -2142,8 +2142,12 @@ window.onload = function() {
                 autoFreezeAlCambiarMes();
                 datosListos = true;
                 renderFI(); renderChart(); renderProyeccion(); renderDonuts(); renderMeta(); renderRanking();
+                verificarAlertaDevio();
+                verificarCelebracion((ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0);
+                mostrarSplash();
             }, 600);
         });
+    cargarConfigAlertas();
     attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
     attachChartTooltip('proyeccion-chart','proyeccion-container', () => chartDataProy);
     window.addEventListener('resize', () => { renderChart(); renderProyeccion(); renderRetiroChart(); renderCategoryEvolution(); });
