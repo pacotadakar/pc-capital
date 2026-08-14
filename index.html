@@ -172,7 +172,26 @@
         .btn-modal-save { background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold-mid) 100%); color:#000;
             font-weight:900; font-size:0.78rem; border:none; padding:0.62rem 1.2rem; border-radius:5px; cursor:pointer; width:100%; }
 
-        /* ── Mobile ── */
+        /* ── Solo lectura ── */
+        body.readonly .input-inline,
+        body.readonly .input-sub,
+        body.readonly .input-box input,
+        body.readonly .select-liq,
+        body.readonly .btn-add,
+        body.readonly .row-actions,
+        body.readonly #btn-undo,
+        body.readonly #btn-redo { pointer-events:none; opacity:0.5; }
+        body.readonly .row-actions { display:none; }
+        body.readonly .btn-add { display:none; }
+        #readonly-banner { display:none; background:rgba(239,68,68,0.12); border:1px solid #ef4444;
+            color:#ef4444; font-size:0.65rem; font-weight:700; text-align:center; padding:0.4rem;
+            border-radius:6px; margin-bottom:0.75rem; letter-spacing:0.05em; }
+        body.readonly #readonly-banner { display:block; }
+        #btn-readonly.active { border-color:#ef4444 !important; color:#ef4444 !important; background: linear-gradient(180deg,#1a0808 0%,#0c0404 100%) !important; }
+
+        /* ── Animación de contadores ── */
+        @keyframes countUp { from { opacity:0.4; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+        .counter-anim { animation: countUp 0.4s ease-out; }
         @media (max-width: 500px) {
             body { padding:0.65rem; }
             .row-item { flex-wrap:wrap; }
@@ -264,11 +283,14 @@
         <button id="btn-redo" class="btn" onclick="ejecutarRedo()" disabled>↪</button>
         <div id="cloud-indicator" class="cloud-status" style="color:#eab308;">⏳</div>
         <button class="btn btn-gold" onclick="abrirConfigModal()">☁️</button>
+        <button id="btn-readonly" class="btn" onclick="toggleReadOnly()" title="Modo solo lectura">🔒</button>
         <button class="btn btn-gold" onclick="window.print()">📄</button>
     </div>
 
     <div class="tc-box">1 USD = <input type="number" id="tc" value="18.00" step="0.01" oninput="registrarCambio(); calcularTodo(); planearSincronizacion();"> MXN</div>
 </header>
+
+<div id="readonly-banner">🔒 MODO SOLO LECTURA — tocá el candado para editar</div>
 
 <div class="pager-dots">
     <span class="dot active" data-i="0" onclick="goToPage(0)"></span>
@@ -699,7 +721,37 @@ function eliminar(tipo,indice) {
     cargarListas(); calcularTodo(); planearSincronizacion();
 }
 
-// ── Cálculos ──────────────────────────────────────────────────────────────
+// ── Modo solo lectura ──────────────────────────────────────────────────────
+let modoSoloLectura = false;
+function toggleReadOnly() {
+    modoSoloLectura = !modoSoloLectura;
+    document.body.classList.toggle('readonly', modoSoloLectura);
+    const btn = document.getElementById('btn-readonly');
+    if (btn) { btn.classList.toggle('active', modoSoloLectura); btn.title = modoSoloLectura ? 'Desactivar solo lectura' : 'Modo solo lectura'; }
+}
+
+// ── Animación de contadores ────────────────────────────────────────────────
+let prevTotals = {};
+function animateCounter(elId, newVal, suffix, prefix='$ ') {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const prev = prevTotals[elId] || 0;
+    if (prev === newVal) { el.innerText = prefix + Math.round(newVal).toLocaleString('en-US') + ' ' + suffix; return; }
+    prevTotals[elId] = newVal;
+    const duration = 500, steps = 20, step = (newVal - prev) / steps;
+    let current = prev, count = 0;
+    el.classList.remove('counter-anim');
+    void el.offsetWidth; // reflow
+    el.classList.add('counter-anim');
+    const interval = setInterval(() => {
+        count++;
+        current += step;
+        el.innerText = prefix + Math.round(current).toLocaleString('en-US') + ' ' + suffix;
+        if (count >= steps) { clearInterval(interval); el.innerText = prefix + Math.round(newVal).toLocaleString('en-US') + ' ' + suffix; }
+    }, duration / steps);
+}
+
+
 const fmtN  = (v,c) => '$ '+Math.round(v).toLocaleString('en-US')+' '+c;
 const fmtNs = (v,c) => '≈ $ '+Math.round(v).toLocaleString('en-US')+' '+c;
 const pct   = (a,b) => b>0 ? ((a/b)*100).toFixed(1)+'%' : '0%';
@@ -728,9 +780,9 @@ function calcularTodo() {
         else lR+=item.v;
     });
 
-    document.getElementById('resumen-total').innerText = fmtN(pUSD,'USD');
-    document.getElementById('resumen-mxn').innerText   = fmtN(mX,'MXN');
-    document.getElementById('resumen-usd').innerText   = fmtN(uS,'USD');
+    animateCounter('resumen-total', pUSD, 'USD');
+    animateCounter('resumen-mxn',   mX,   'MXN');
+    animateCounter('resumen-usd',   uS,   'USD');
     document.getElementById('share-total-mxn').innerText = pct(mxnEnUSD,pUSD)+' del patrimonio';
     document.getElementById('share-total-usd').innerText = pct(uS,pUSD)+' del patrimonio';
     document.getElementById('total-mxn-footer').innerText = fmtN(mX,'MXN');
