@@ -732,9 +732,8 @@ function sparklineSVG(tipo, id) {
 function cargarListas() {
     ensureIds(portafolioMXN); ensureIds(portafolioUSD);
     const render = (arr,t) => arr.map((item,i) => `
-        <div class="row-item" draggable="true" data-tipo="${t}" data-idx="${i}"
-            ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event,'${t}')" ondragend="onDragEnd(event)">
-            <div style="display:flex;flex-direction:column;align-items:center;cursor:grab;color:#2e2e3e;padding:0 2px;flex-shrink:0;" class="drag-handle">
+        <div class="row-item" data-tipo="${t}" data-idx="${i}">
+            <div style="display:flex;flex-direction:column;align-items:center;cursor:grab;color:#2e2e3e;padding:0 2px;flex-shrink:0;touch-action:none;" class="drag-handle" id="dh-${t}-${i}">
                 <span style="font-size:0.55rem;line-height:0.9;">⠿</span>
             </div>
             <div class="row-actions">
@@ -759,6 +758,7 @@ function cargarListas() {
         </div>`).join('');
     document.getElementById('contenedor-mxn').innerHTML = render(portafolioMXN,'mxn');
     document.getElementById('contenedor-usd').innerHTML = render(portafolioUSD,'usd');
+    attachDragHandles();
 }
 function act(tipo,indice,campo,valor) {
     registrarCambio();
@@ -784,7 +784,72 @@ function eliminar(tipo,indice) {
     cargarListas(); calcularTodo(); planearSincronizacion();
 }
 
-// ── Configuración de alertas ──────────────────────────────────────────────
+// ── Backup local infalible (localStorage del dispositivo) ─────────────────
+const BACKUP_KEY = 'pc_full_backup';
+
+function guardarBackupLocal() {
+    try {
+        const snapshot = {
+            valores_mxn: portafolioMXN,
+            valores_usd: portafolioUSD,
+            tipo_cambio: parseFloat(document.getElementById('tc').value)||18,
+            historial_mensual: historialMensual,
+            versiones_portfolio: window.versionesPortfolio||[],
+            meta_patrimonio: metaPatrimonio,
+            finanzas_fi: finanzasFI,
+            saved_at: new Date().toISOString()
+        };
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(snapshot));
+    } catch(e) { console.warn('Backup local fallido:', e); }
+}
+
+function restaurarDesdeBackupLocal() {
+    try {
+        const raw = localStorage.getItem(BACKUP_KEY);
+        if (!raw) return false;
+        const d = JSON.parse(raw);
+        const totalCheck = (d.valores_mxn||[]).reduce((s,i)=>s+i.v,0) + (d.valores_usd||[]).reduce((s,i)=>s+i.v,0);
+        if (totalCheck === 0) return false; // backup también está en cero, no restaurar
+        document.getElementById('tc').value = d.tipo_cambio||18;
+        portafolioMXN = d.valores_mxn||[]; ensureIds(portafolioMXN);
+        portafolioUSD = d.valores_usd||[]; ensureIds(portafolioUSD);
+        if (d.historial_mensual?.length) historialMensual = d.historial_mensual;
+        if (d.versiones_portfolio?.length) window.versionesPortfolio = d.versiones_portfolio;
+        if (d.meta_patrimonio) metaPatrimonio = d.meta_patrimonio;
+        if (d.finanzas_fi) finanzasFI = d.finanzas_fi;
+        console.log('✅ Datos restaurados desde backup local:', d.saved_at);
+        return true;
+    } catch(e) { console.warn('Restauración local fallida:', e); return false; }
+}
+
+// ── Frases motivacionales (inglés, originales) ────────────────────────────
+const FRASES = [
+    { q: "You, me, or nobody is gonna hit as hard as life. But it ain't about how hard you hit — it's about how hard you can get hit and keep moving forward.", a: "Rocky Balboa" },
+    { q: "The impediment to action advances action. What stands in the way becomes the way.", a: "Marcus Aurelius" },
+    { q: "Wealth consists not in having great possessions, but in having few wants.", a: "Epictetus" },
+    { q: "Someone is sitting in the shade today because someone planted a tree a long time ago.", a: "Warren Buffett" },
+    { q: "Do not indulge in expectations of what you do not have — count what you do have among the blessings of fortune.", a: "Marcus Aurelius" },
+    { q: "It's not about how much you earn — it's about how much you keep, how hard it works for you, and how many generations you keep it for.", a: "Robert Kiyosaki" },
+    { q: "Time in the market beats timing the market.", a: "Warren Buffett" },
+    { q: "Until you make peace with who you are, you'll never be content with what you have.", a: "Doris Mortman" },
+    { q: "Going in one more round when you don't think you can — that's what makes all the difference in your life.", a: "Rocky Balboa" },
+    { q: "Every moment is a fresh beginning.", a: "T.S. Eliot" },
+    { q: "It is not the man who has too little, but the man who craves more, that is poor.", a: "Seneca" },
+    { q: "The first wealth is health.", a: "Ralph Waldo Emerson" },
+    { q: "Compound interest is the eighth wonder of the world. He who understands it, earns it; he who doesn't, pays it.", a: "Albert Einstein" },
+    { q: "Waste no more time arguing about what a good man should be. Be one.", a: "Marcus Aurelius" },
+    { q: "I hated every minute of training, but I said: don't quit. Suffer now and live the rest of your life as a champion.", a: "Muhammad Ali" },
+    { q: "Price is what you pay. Value is what you get.", a: "Warren Buffett" },
+    { q: "Difficulties strengthen the mind, as labour does the body.", a: "Seneca" },
+    { q: "The secret of getting ahead is getting started.", a: "Mark Twain" },
+    { q: "Real wealth is not about money. Real wealth is: not having to go to meetings, not having to spend time with jerks, not being locked into status games.", a: "Naval Ravikant" },
+    { q: "If it is not right, do not do it; if it is not true, do not say it.", a: "Marcus Aurelius" },
+    { q: "It ain't over 'til it's over.", a: "Yogi Berra" },
+    { q: "Don't count the days. Make the days count.", a: "Muhammad Ali" },
+    { q: "Seek freedom and become captive of your desires. Seek discipline and find your liberty.", a: "Frank Herbert" },
+    { q: "An investment in knowledge pays the best interest.", a: "Benjamin Franklin" },
+    { q: "The best time to plant a tree was twenty years ago. The second best time is now.", a: "Chinese Proverb" }
+];
 let configAlertas = { alertaPct: 5, celebracionUSD: 10000, splash: true };
 
 function abrirAlertas() {
@@ -893,33 +958,7 @@ function verificarCelebracion(pUSD) {
 }
 
 // ── Frases motivacionales ─────────────────────────────────────────────────
-const FRASES = [
-    { q: "El hombre que mueve montañas comienza cargando pequeñas piedras.", a: "Confucio" },
-    { q: "No es rico el que tiene mucho, sino el que necesita poco.", a: "Séneca" },
-    { q: "El mundo no te da lo que mereces, te da lo que exiges.", a: "Rocky Balboa" },
-    { q: "No es cuánto ganas, sino cuánto conservas y durante cuánto tiempo lo haces trabajar.", a: "Robert Kiyosaki" },
-    { q: "La riqueza no consiste en tener grandes posesiones, sino en tener pocas necesidades.", a: "Epicteto" },
-    { q: "Cada golpe que recibo me hace más fuerte. Eso es todo lo que sé.", a: "Rocky Balboa" },
-    { q: "Piensa en lo que tienes y no en lo que deseas.", a: "Marco Aurelio" },
-    { q: "La disciplina es el puente entre metas y logros.", a: "Jim Rohn" },
-    { q: "Alguien está sentado a la sombra hoy porque alguien plantó un árbol hace mucho tiempo.", a: "Warren Buffett" },
-    { q: "El tiempo en el mercado supera al momento perfecto de entrada.", a: "Warren Buffett" },
-    { q: "No es el más fuerte ni el más inteligente quien sobrevive, sino el que mejor se adapta al cambio.", a: "Charles Darwin" },
-    { q: "La vida no te golpea tan fuerte como lo hace la gente. Pero tú tampoco cedes. ¿Eso es lo que te define?", a: "Rocky Balboa" },
-    { q: "Actúa como si lo que haces marcara la diferencia. Lo marca.", a: "William James" },
-    { q: "El éxito no es el dinero. El éxito es tener opciones.", a: "Chris Rock" },
-    { q: "La fortuna ayuda a los valientes.", a: "Virgilio" },
-    { q: "Haz lo que puedas, con lo que tienes, donde estás.", a: "Theodore Roosevelt" },
-    { q: "No cuentes los días, haz que los días cuenten.", a: "Muhammad Ali" },
-    { q: "La mayor gloria no es nunca caer, sino levantarse cada vez que caemos.", a: "Confucio" },
-    { q: "El sacrificio de hoy es la fortaleza de mañana.", a: "Rocky Balboa" },
-    { q: "El tiempo es el amigo del negocio maravilloso y el enemigo del mediocre.", a: "Warren Buffett" },
-    { q: "Tolera lo incontrolable, transforma lo controlable.", a: "Marco Aurelio" },
-    { q: "Un hombre puede ser destruido pero no derrotado.", a: "Ernest Hemingway" },
-    { q: "La riqueza real es la capacidad de vivir como quieras.", a: "Henry David Thoreau" },
-    { q: "Todo lo que escuchas es una opinión, no un hecho. Todo lo que ves es una perspectiva, no la verdad.", a: "Marco Aurelio" },
-    { q: "Primero construye tu árbol del dinero. Luego siéntate a su sombra.", a: "Anónimo" }
-];
+
 let splashMostrado = false;
 function mostrarSplash() {
     if (!configAlertas.splash) return;
@@ -938,33 +977,68 @@ function cerrarSplash() {
 }
 
 
-let dragSrcIdx = null, dragSrcTipo = null;
+// ── Drag & Drop touch + mouse ─────────────────────────────────────────────
+let dragState = null, dragClone = null;
 
-function onDragStart(e) {
-    const row = e.currentTarget;
-    dragSrcIdx  = parseInt(row.dataset.idx);
-    dragSrcTipo = row.dataset.tipo;
-    row.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
+function attachDragHandles() {
+    ['mxn','usd'].forEach(t => {
+        const rows = document.getElementById(t==='mxn'?'contenedor-mxn':'contenedor-usd');
+        if (!rows) return;
+        [...rows.querySelectorAll('.drag-handle')].forEach((handle, i) => {
+            handle.onmousedown = e => startDrag(e, t, i, e.clientX, e.clientY);
+            handle.ontouchstart = e => { e.stopPropagation(); const touch=e.touches[0]; startDrag(e, t, i, touch.clientX, touch.clientY); };
+        });
+    });
 }
-function onDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    document.querySelectorAll('.row-item.drag-over').forEach(r=>r.classList.remove('drag-over'));
-    e.currentTarget.classList.add('drag-over');
-}
-function onDrop(e, tipo) {
-    e.preventDefault();
-    const destIdx = parseInt(e.currentTarget.dataset.idx);
-    if (dragSrcTipo !== tipo || dragSrcIdx === destIdx) return;
-    const arr = tipo === 'mxn' ? portafolioMXN : portafolioUSD;
-    const [moved] = arr.splice(dragSrcIdx, 1);
-    arr.splice(destIdx, 0, moved);
-    cargarListas(); calcularTodo(); planearSincronizacion();
-}
-function onDragEnd(e) {
-    document.querySelectorAll('.row-item').forEach(r=>{ r.classList.remove('dragging','drag-over'); });
-    dragSrcIdx = null; dragSrcTipo = null;
+
+function startDrag(e, tipo, idx, cx, cy) {
+    if (modoSoloLectura) return;
+    const rows = document.getElementById(tipo==='mxn'?'contenedor-mxn':'contenedor-usd');
+    const allRows = [...rows.querySelectorAll('.row-item')];
+    const srcEl = allRows[idx];
+    if (!srcEl) return;
+    const rect = srcEl.getBoundingClientRect();
+    dragState = { tipo, srcIdx: idx, curIdx: idx, allRows, offsetY: cy - rect.top };
+    dragClone = srcEl.cloneNode(true);
+    dragClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.9;z-index:9999;pointer-events:none;background:linear-gradient(180deg,#1c150a,#0c0a04);border:1px solid var(--gold-mid);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.5);`;
+    document.body.appendChild(dragClone);
+    srcEl.style.opacity = '0.3';
+
+    const onMove = ev => {
+        const y = ev.touches ? ev.touches[0].clientY : ev.clientY;
+        dragClone.style.top = (y - dragState.offsetY) + 'px';
+        let newIdx = dragState.curIdx;
+        dragState.allRows.forEach((r,i) => {
+            const rb = r.getBoundingClientRect();
+            if (y > rb.top + rb.height*0.25 && y < rb.bottom - rb.height*0.25) newIdx = i;
+        });
+        if (newIdx !== dragState.curIdx) {
+            dragState.allRows.forEach(r => r.classList.remove('drag-over'));
+            if (dragState.allRows[newIdx]) dragState.allRows[newIdx].classList.add('drag-over');
+            dragState.curIdx = newIdx;
+        }
+    };
+    const onEnd = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+        if (dragClone) { dragClone.remove(); dragClone = null; }
+        if (!dragState) return;
+        const { tipo: t, srcIdx, curIdx, allRows } = dragState;
+        allRows.forEach(r => { r.classList.remove('drag-over'); r.style.opacity=''; });
+        dragState = null;
+        if (srcIdx !== curIdx) {
+            const arr = t==='mxn' ? portafolioMXN : portafolioUSD;
+            const [moved] = arr.splice(srcIdx, 1);
+            arr.splice(curIdx, 0, moved);
+            cargarListas(); calcularTodo(); planearSincronizacion();
+        }
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, {passive:true});
+    document.addEventListener('touchend', onEnd, {passive:true});
 }
 
 
@@ -1053,6 +1127,7 @@ function calcularTodo() {
 
     ultimoCalculo = { mX, uS, lI, l24, lA, lR, pUSD, mxnEnUSD, tc };
     guardarBufferVivo();
+    verificarCelebracion(pUSD);
     renderChart();
     renderProyeccion();
     renderDonuts();
@@ -1972,10 +2047,16 @@ async function descargarDesdeNube() {
         if (d?.meta_patrimonio) { metaPatrimonio = d.meta_patrimonio; }
         if (d?.finanzas_fi) { finanzasFI = d.finanzas_fi; }
         if (d?.versiones_portfolio) { window.versionesPortfolio = d.versiones_portfolio; }
+        // ── Guardar backup local completo después de cada carga exitosa ──
+        guardarBackupLocal();
         ind.innerText="☁️ Sync"; ind.style.color="#b38728";
         cargarListas(); calcularTodo();
     } catch(e) {
         ind.innerText="❌ Error"; ind.style.color="#ef4444";
+        // ── Si la nube falla, restaurar desde backup local ──
+        if (restaurarDesdeBackupLocal()) {
+            ind.innerText="📱 Sin conexión (backup local)"; ind.style.color="#eab308";
+        }
         cargarListas(); calcularTodo();
         console.error(e);
     }
