@@ -205,7 +205,77 @@
             .donut-row { justify-content:center; }
         }
         @media print {
-            header .toolbar, .input-box, .tc-box, .btn-add, .row-actions, #setup-modal, .pager-dots { display:none !important; }
+            @page { margin: 1.5cm; size: A4; }
+
+            /* Reset colores para impresión */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            body { background:#fff !important; color:#111 !important; padding:0 !important; font-size:10pt; }
+
+            /* Ocultar elementos innecesarios */
+            header .toolbar, .input-box, .tc-box, .btn-add, .row-actions,
+            #setup-modal, .pager-dots, .pages-viewport, .drag-handle,
+            #readonly-banner, #alert-banner-container, #celebration-toast,
+            #confetti-canvas, #alertas-modal, #splash-modal,
+            .btn-period, #chart-filters,
+            .chart-box .chart-hdr > div:last-child { display:none !important; }
+
+            /* Mostrar solo página 1 — override del layout de páginas */
+            .pages-viewport { overflow: visible !important; }
+            .pages-track { transform: none !important; display: block !important; width: 100% !important; }
+            .page-slide { width: 100% !important; display: block !important; }
+            .page-slide:nth-child(2) { display: none !important; }
+
+            /* Header simplificado */
+            header { background: #111 !important; border: none !important; border-bottom: 3px solid #b38728 !important;
+                box-shadow: none !important; padding: 0.75rem 1rem !important; margin-bottom: 1rem !important; border-radius: 0 !important;
+                flex-wrap: nowrap !important; }
+            .logo-icon-img { width: 36px !important; height: 36px !important; }
+            .date-badge { background: transparent !important; border: none !important; color: #b38728 !important; font-size: 9pt !important; }
+            .tc-box { display: block !important; background: transparent !important; border: none !important; color: #555 !important; font-size: 8pt !important; }
+
+            /* Cards resumen */
+            .grid-sum { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 0.5rem !important; margin-bottom: 1rem !important; }
+            .card { background: #f8f8f8 !important; border: 1px solid #ddd !important; border-radius: 6px !important; padding: 0.6rem !important; }
+            .card-main { background: #111 !important; border-left: 4px solid #b38728 !important; }
+            .card-main .card-val { color: #e5c158 !important; -webkit-text-fill-color: #e5c158 !important; }
+            .card-val { color: #111 !important; -webkit-text-fill-color: #111 !important; font-size: 12pt !important; }
+            .card-title { color: #666 !important; }
+            .card-share { color: #888 !important; }
+
+            /* Barras de liquidez */
+            .liq-box { background: #f8f8f8 !important; border: 1px solid #ddd !important; border-radius: 6px !important; page-break-inside: avoid; }
+            .bar-bg { background: #e0e0e0 !important; border: none !important; }
+            .bar-fill { background: #b38728 !important; }
+            .bar-info { color: #333 !important; }
+            .section-title { color: #b38728 !important; }
+
+            /* Gráfico evolución */
+            .chart-box { background: #f8f8f8 !important; border: 1px solid #ddd !important; border-radius: 6px !important;
+                page-break-inside: avoid; margin-bottom: 1rem !important; }
+            .chart-val { color: #111 !important; -webkit-text-fill-color: #111 !important; font-size: 14pt !important; }
+            .chart-chg.pos { background: #e6f7ee !important; color: #1a7a3a !important; }
+            .chart-chg.neg { background: #fdecea !important; color: #c0392b !important; }
+            .chart-period { color: #666 !important; }
+            #evolucion-chart line, #evolucion-chart polyline { stroke: #b38728 !important; }
+            #evolucion-chart text { fill: #555 !important; }
+
+            /* Tablas de cuentas */
+            .grid-tables { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 0.75rem !important; }
+            .table-box { background: #f8f8f8 !important; border: 1px solid #ddd !important; border-radius: 6px !important;
+                page-break-inside: avoid; }
+            .border-gold { border-top: 3px solid #b38728 !important; }
+            .border-blue { border-top: 3px solid #3a7fc1 !important; }
+            .table-hdr { border-bottom: 1px solid #ddd !important; }
+            .table-hdr-title { color: #111 !important; }
+            .table-hdr-total { color: #111 !important; font-size: 10pt !important; }
+            .table-hdr-sub { color: #b38728 !important; }
+            .table-hdr-share { color: #888 !important; }
+            .row-item { background: #fff !important; border: 1px solid #eee !important; margin-bottom: 3px !important; padding: 0.4rem !important; }
+            .input-inline { color: #111 !important; font-size: 9pt !important; }
+            .input-sub { color: #888 !important; font-size: 8pt !important; }
+            .share-badge { color: #b38728 !important; font-size: 8pt !important; }
+            .select-liq { color: #888 !important; font-size: 8pt !important; border: none !important; background: transparent !important; }
         }
 
         /* ════════════════════════════════════════════════════════════════
@@ -1970,7 +2040,7 @@ function autoFreezeAlCambiarMes() {
             // También guardar versión completa del portfolio si la tenemos en el buffer
             if (!window.versionesPortfolio) window.versionesPortfolio = [];
             const yaExisteVersion = window.versionesPortfolio.find(v=>v.mes===buffer.mes);
-            if (!yaExisteVersion && portafolioMXN.some(i=>i.v>0) || portafolioUSD.some(i=>i.v>0)) {
+            if (!yaExisteVersion && (portafolioMXN.some(i=>i.v>0) || portafolioUSD.some(i=>i.v>0))) {
                 window.versionesPortfolio.push({
                     mes: buffer.mes,
                     total: buffer.total,
@@ -2047,6 +2117,15 @@ async function descargarDesdeNube() {
         if (d?.meta_patrimonio) { metaPatrimonio = d.meta_patrimonio; }
         if (d?.finanzas_fi) { finanzasFI = d.finanzas_fi; }
         if (d?.versiones_portfolio) { window.versionesPortfolio = d.versiones_portfolio; }
+
+        // ── Si la nube devolvió todo en cero, usar backup local ──
+        const totalCloud = portafolioMXN.reduce((s,i)=>s+i.v,0) + portafolioUSD.reduce((s,i)=>s+i.v,0);
+        if (totalCloud === 0 && restaurarDesdeBackupLocal()) {
+            ind.innerText="📱 Nube vacía — restaurado local"; ind.style.color="#eab308";
+            cargarListas(); calcularTodo();
+            return;
+        }
+
         // ── Guardar backup local completo después de cada carga exitosa ──
         guardarBackupLocal();
         ind.innerText="☁️ Sync"; ind.style.color="#b38728";
@@ -2220,8 +2299,8 @@ window.onload = function() {
         .then(() => {
             setTimeout(() => {
                 registrarCambio();
+                datosListos = true; // ← debe ser ANTES de autoFreeze para que planearSincronizacion funcione
                 autoFreezeAlCambiarMes();
-                datosListos = true;
                 renderFI(); renderChart(); renderProyeccion(); renderDonuts(); renderMeta(); renderRanking();
                 verificarAlertaDevio();
                 verificarCelebracion((ultimoCalculo && ultimoCalculo.pUSD) ? ultimoCalculo.pUSD : 0);
