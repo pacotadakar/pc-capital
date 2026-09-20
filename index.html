@@ -412,7 +412,7 @@
         <button class="btn btn-gold" onclick="abrirConfigModal()">☁️</button>
         <button id="btn-readonly" class="btn" onclick="toggleReadOnly()" title="Modo solo lectura">🔒</button>
         <button class="btn btn-gold" onclick="abrirAlertas()" title="Alertas y celebraciones">⚙️</button>
-        <button class="btn btn-gold" onclick="window.print()">📄</button>
+        <button class="btn btn-gold" onclick="generarPDF()">📄</button>
     </div>
 
     <div class="tc-box">1 USD = <input type="number" id="tc" value="18.00" step="0.01" oninput="registrarCambio(); calcularTodo(); planearSincronizacion();"> MXN</div>
@@ -1047,7 +1047,83 @@ function cerrarSplash() {
 }
 
 
-// ── Drag & Drop touch + mouse ─────────────────────────────────────────────
+// ── Generador de PDF (mobile-friendly) ────────────────────────────────────
+function generarPDF() {
+    const tc = parseFloat(document.getElementById('tc').value)||18;
+    const u = ultimoCalculo;
+    const fecha = document.getElementById('date-badge').innerText;
+    const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    const rowsMXN = portafolioMXN.filter(i=>i.v>0).map(i=>`
+        <tr><td>${i.c}</td><td style="color:#888">${i.p}</td><td style="color:#888">${i.l}</td>
+        <td style="text-align:right;font-weight:700">$ ${Math.round(i.v).toLocaleString('en-US')}</td>
+        <td style="text-align:right;color:#b38728">$ ${Math.round(i.v/tc).toLocaleString('en-US')}</td></tr>`).join('');
+
+    const rowsUSD = portafolioUSD.filter(i=>i.v>0).map(i=>`
+        <tr><td>${i.c}</td><td style="color:#888">${i.p}</td><td style="color:#888">${i.l}</td>
+        <td style="text-align:right;font-weight:700">$ ${Math.round(i.v).toLocaleString('en-US')}</td>
+        <td style="text-align:right;color:#b38728">$ ${Math.round(i.v*tc).toLocaleString('en-US')}</td></tr>`).join('');
+
+    const histRows = historialMensual.slice().sort((a,b)=>b.mes.localeCompare(a.mes)).slice(0,12).map(h=>{
+        const [y,m]=h.mes.split('-');
+        return `<tr><td>${mNames[parseInt(m)]} ${y}</td><td style="text-align:right;font-weight:700">$ ${Math.round(h.total).toLocaleString('en-US')} USD</td></tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>PC Capital — Resumen ${fecha}</title>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+        body { background:#fff; color:#111; padding:1.5rem; font-size:13px; max-width:800px; margin:0 auto; }
+        h1 { font-size:1.4rem; color:#111; margin-bottom:0.25rem; }
+        .subtitle { color:#888; font-size:0.8rem; margin-bottom:1.5rem; }
+        .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; margin-bottom:1.5rem; }
+        .card { background:#f5f5f5; border-radius:8px; padding:0.75rem; border-left:4px solid #b38728; }
+        .card.main { background:#111; color:#fff; }
+        .card-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin-bottom:0.3rem; }
+        .card.main .card-label { color:#888; }
+        .card-value { font-size:1.1rem; font-weight:900; color:#111; }
+        .card.main .card-value { color:#e5c158; }
+        .card-sub { font-size:0.65rem; color:#aaa; margin-top:0.2rem; }
+        h2 { font-size:0.85rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#b38728; margin:1.25rem 0 0.6rem; border-bottom:1px solid #eee; padding-bottom:0.4rem; }
+        table { width:100%; border-collapse:collapse; margin-bottom:1rem; font-size:0.78rem; }
+        th { text-align:left; color:#888; font-weight:600; padding:0.3rem 0.4rem; border-bottom:1px solid #eee; font-size:0.65rem; text-transform:uppercase; }
+        td { padding:0.35rem 0.4rem; border-bottom:1px solid #f5f5f5; }
+        tr:last-child td { border-bottom:none; }
+        .liq-row { display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid #f5f5f5; font-size:0.78rem; }
+        .liq-bar-bg { background:#eee; height:5px; border-radius:3px; margin-top:0.25rem; }
+        .liq-bar-fill { background:#b38728; height:100%; border-radius:3px; }
+        .footer { margin-top:2rem; padding-top:1rem; border-top:1px solid #eee; font-size:0.65rem; color:#aaa; text-align:center; }
+        .btn-print { display:block; background:#b38728; color:#000; font-weight:900; padding:0.75rem; border-radius:8px; text-align:center; margin-bottom:1.5rem; cursor:pointer; border:none; width:100%; font-size:0.9rem; }
+        @media print { .btn-print { display:none; } }
+    </style></head><body>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+    <h1>PC Capital</h1>
+    <p class="subtitle">${fecha} &nbsp;·&nbsp; 1 USD = ${tc} MXN</p>
+    <div class="cards">
+        <div class="card main"><div class="card-label">Patrimonio Total</div><div class="card-value">$ ${Math.round(u.pUSD||0).toLocaleString('en-US')} USD</div></div>
+        <div class="card"><div class="card-label">Total Pesos</div><div class="card-value">$ ${Math.round(u.mX||0).toLocaleString('en-US')}</div><div class="card-sub">MXN</div></div>
+        <div class="card"><div class="card-label">Total Dólares</div><div class="card-value">$ ${Math.round(u.uS||0).toLocaleString('en-US')}</div><div class="card-sub">USD</div></div>
+    </div>
+    <h2>Disponibilidad de Capital</h2>
+    ${[['⚡ Inmediata',u.lI],['⏱ Corto Plazo (24h)',u.l24],['🗓 Mediano Plazo (Anual)',u.lA],['🔒 Largo Plazo / Retiro',u.lR]].map(([l,v])=>`
+    <div class="liq-row"><span>${l}</span><span><strong>$ ${Math.round(v||0).toLocaleString('en-US')} USD</strong></span></div>`).join('')}
+    <h2>Activos en Pesos (MXN)</h2>
+    <table><thead><tr><th>Cuenta</th><th>Plataforma</th><th>Liquidez</th><th style="text-align:right">MXN</th><th style="text-align:right">≈ USD</th></tr></thead>
+    <tbody>${rowsMXN||'<tr><td colspan="5" style="color:#aaa;padding:0.5rem">Sin cuentas con saldo</td></tr>'}</tbody></table>
+    <h2>Activos en Dólares (USD)</h2>
+    <table><thead><tr><th>Cuenta</th><th>Plataforma</th><th>Liquidez</th><th style="text-align:right">USD</th><th style="text-align:right">≈ MXN</th></tr></thead>
+    <tbody>${rowsUSD||'<tr><td colspan="5" style="color:#aaa;padding:0.5rem">Sin cuentas con saldo</td></tr>'}</tbody></table>
+    ${historialMensual.length>1?`<h2>Historial Patrimonial</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Total USD</th></tr></thead><tbody>${histRows}</tbody></table>`:''}
+    <div class="footer">Generado por PC Capital · ${new Date().toLocaleString('es-MX')}</div>
+    </body></html>`;
+
+    const blob = new Blob([html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+}
+
+
 let dragState = null, dragClone = null;
 
 function attachDragHandles() {
