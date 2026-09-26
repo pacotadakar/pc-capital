@@ -1024,6 +1024,9 @@ function verificarCelebracion(pUSD) {
         lanzarConfetti();
     } else {
         yaFestejado = false;
+        // Ocultar toast si el patrimonio ya no supera el umbral
+        const toast = document.getElementById('celebration-toast');
+        if (toast) toast.style.display = 'none';
     }
 }
 
@@ -1047,8 +1050,108 @@ function cerrarSplash() {
 }
 
 
-// ── Generador de PDF (mobile-friendly) ────────────────────────────────────
+// ── Generador de PDF (mobile-friendly overlay) ────────────────────────────
 function generarPDF() {
+    const tc = parseFloat(document.getElementById('tc').value)||18;
+    const u = ultimoCalculo;
+    const fecha = document.getElementById('date-badge').innerText;
+    const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    const rowsMXN = portafolioMXN.filter(i=>i.v>0).map(i=>`
+        <tr><td>${i.c}</td><td>${i.p}</td><td>${i.l}</td>
+        <td class="num">$ ${Math.round(i.v).toLocaleString('en-US')}</td>
+        <td class="num gold">$ ${Math.round(i.v/tc).toLocaleString('en-US')}</td></tr>`).join('');
+
+    const rowsUSD = portafolioUSD.filter(i=>i.v>0).map(i=>`
+        <tr><td>${i.c}</td><td>${i.p}</td><td>${i.l}</td>
+        <td class="num">$ ${Math.round(i.v).toLocaleString('en-US')}</td>
+        <td class="num gold">$ ${Math.round(i.v*tc).toLocaleString('en-US')}</td></tr>`).join('');
+
+    const histRows = historialMensual.slice().sort((a,b)=>b.mes.localeCompare(a.mes)).slice(0,12).map(h=>{
+        const [y,m]=h.mes.split('-');
+        return `<tr><td>${mNames[parseInt(m)]} ${y}</td><td class="num">$ ${Math.round(h.total).toLocaleString('en-US')} USD</td></tr>`;
+    }).join('');
+
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'pdf-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:9998;overflow-y:auto;padding:1.5rem;font-family:-apple-system,sans-serif;font-size:13px;color:#111;';
+    overlay.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div><h1 style="font-size:1.3rem;margin-bottom:0.1rem;">PC Capital</h1><p style="color:#888;font-size:0.75rem;">${fecha} · 1 USD = ${tc} MXN</p></div>
+            <div style="display:flex;gap:0.5rem;">
+                <button onclick="window.print()" style="background:#b38728;color:#000;font-weight:900;padding:0.5rem 0.9rem;border-radius:8px;border:none;font-size:0.75rem;cursor:pointer;">🖨️ Imprimir</button>
+                <button onclick="document.getElementById('pdf-overlay').remove()" style="background:#eee;color:#333;font-weight:700;padding:0.5rem 0.9rem;border-radius:8px;border:none;font-size:0.75rem;cursor:pointer;">✕ Cerrar</button>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1.2rem;">
+            <div style="background:#111;border-radius:8px;padding:0.65rem;border-left:4px solid #b38728;">
+                <div style="font-size:0.55rem;text-transform:uppercase;color:#888;margin-bottom:0.2rem;">Patrimonio Total</div>
+                <div style="font-size:1rem;font-weight:900;color:#e5c158;">$ ${Math.round(u.pUSD||0).toLocaleString('en-US')} USD</div>
+            </div>
+            <div style="background:#f5f5f5;border-radius:8px;padding:0.65rem;border-left:4px solid #22c55e;">
+                <div style="font-size:0.55rem;text-transform:uppercase;color:#888;margin-bottom:0.2rem;">Pesos</div>
+                <div style="font-size:1rem;font-weight:900;">$ ${Math.round(u.mX||0).toLocaleString('en-US')}</div>
+                <div style="font-size:0.65rem;color:#aaa;">MXN</div>
+            </div>
+            <div style="background:#f5f5f5;border-radius:8px;padding:0.65rem;border-left:4px solid #60a5fa;">
+                <div style="font-size:0.55rem;text-transform:uppercase;color:#888;margin-bottom:0.2rem;">Dólares</div>
+                <div style="font-size:1rem;font-weight:900;">$ ${Math.round(u.uS||0).toLocaleString('en-US')}</div>
+                <div style="font-size:0.65rem;color:#aaa;">USD</div>
+            </div>
+        </div>
+        <h2 style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#b38728;margin:1rem 0 0.5rem;border-bottom:1px solid #eee;padding-bottom:0.3rem;">Disponibilidad de Capital</h2>
+        ${[['⚡ Inmediata',u.lI],['⏱ Corto Plazo (24h)',u.l24],['🗓 Mediano Plazo (Anual)',u.lA],['🔒 Largo Plazo / Retiro',u.lR]].map(([l,v])=>`
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid #f5f5f5;font-size:0.78rem;">
+            <span>${l}</span><strong>$ ${Math.round(v||0).toLocaleString('en-US')} USD</strong></div>`).join('')}
+        <h2 style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#b38728;margin:1rem 0 0.5rem;border-bottom:1px solid #eee;padding-bottom:0.3rem;">Activos en Pesos (MXN)</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin-bottom:0.75rem;">
+            <thead><tr style="color:#888;font-size:0.6rem;text-transform:uppercase;">
+                <th style="text-align:left;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">Cuenta</th>
+                <th style="text-align:left;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">Plataforma</th>
+                <th style="text-align:right;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">MXN</th>
+                <th style="text-align:right;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;color:#b38728;">≈ USD</th></tr></thead>
+            <tbody>${portafolioMXN.filter(i=>i.v>0).map(i=>`
+                <tr><td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;">${i.c}</td>
+                <td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;color:#888;">${i.p}</td>
+                <td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;text-align:right;font-weight:700;">$ ${Math.round(i.v).toLocaleString('en-US')}</td>
+                <td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;text-align:right;color:#b38728;">$ ${Math.round(i.v/tc).toLocaleString('en-US')}</td></tr>`).join('')}
+            </tbody></table>
+        <h2 style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#b38728;margin:1rem 0 0.5rem;border-bottom:1px solid #eee;padding-bottom:0.3rem;">Activos en Dólares (USD)</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin-bottom:0.75rem;">
+            <thead><tr style="color:#888;font-size:0.6rem;text-transform:uppercase;">
+                <th style="text-align:left;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">Cuenta</th>
+                <th style="text-align:left;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">Plataforma</th>
+                <th style="text-align:right;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">USD</th>
+                <th style="text-align:right;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;color:#b38728;">≈ MXN</th></tr></thead>
+            <tbody>${portafolioUSD.filter(i=>i.v>0).map(i=>`
+                <tr><td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;">${i.c}</td>
+                <td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;color:#888;">${i.p}</td>
+                <td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;text-align:right;font-weight:700;">$ ${Math.round(i.v).toLocaleString('en-US')}</td>
+                <td style="padding:0.3rem 0.3rem;border-bottom:1px solid #f5f5f5;text-align:right;color:#b38728;">$ ${Math.round(i.v*tc).toLocaleString('en-US')}</td></tr>`).join('')}
+            </tbody></table>
+        ${historialMensual.length>1?`
+        <h2 style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#b38728;margin:1rem 0 0.5rem;border-bottom:1px solid #eee;padding-bottom:0.3rem;">Historial Patrimonial</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+            <thead><tr style="color:#888;font-size:0.6rem;text-transform:uppercase;">
+                <th style="text-align:left;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">Mes</th>
+                <th style="text-align:right;padding:0.25rem 0.3rem;border-bottom:1px solid #eee;">Total USD</th></tr></thead>
+            <tbody>${histRows}</tbody></table>`:''}
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:0.6rem;color:#aaa;text-align:center;">
+            PC Capital · ${new Date().toLocaleString('es-MX')}</div>`;
+
+    document.body.appendChild(overlay);
+
+    // Print CSS para el overlay
+    let printStyle = document.getElementById('pdf-print-style');
+    if (!printStyle) {
+        printStyle = document.createElement('style');
+        printStyle.id = 'pdf-print-style';
+        printStyle.innerHTML = `@media print { body > *:not(#pdf-overlay) { display:none !important; } #pdf-overlay { position:static !important; overflow:visible !important; } #pdf-overlay button { display:none !important; } }`;
+        document.head.appendChild(printStyle);
+    }
+}
+
     const tc = parseFloat(document.getElementById('tc').value)||18;
     const u = ultimoCalculo;
     const fecha = document.getElementById('date-badge').innerText;
@@ -1118,10 +1221,6 @@ function generarPDF() {
     <div class="footer">Generado por PC Capital · ${new Date().toLocaleString('es-MX')}</div>
     </body></html>`;
 
-    const blob = new Blob([html], {type:'text/html'});
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-}
 
 
 let dragState = null, dragClone = null;
