@@ -1397,8 +1397,15 @@ function filtrarPorPeriodo(allData) {
     const desde = new Date(now.getFullYear(), now.getMonth() - meses, 1);
     const desdeStr = `${desde.getFullYear()}-${String(desde.getMonth()+1).padStart(2,'0')}`;
     const filtered = allData.filter(d => d.mes >= desdeStr);
-    // Si hay menos de 2 puntos en el período, avisa pero no inventa data de otro período
-    return filtered.length >= 2 ? filtered : allData;
+    // Si hay menos de 2 puntos, incluir el punto más cercano anterior para tener referencia
+    if (filtered.length < 2) {
+        const sorted = [...allData].sort((a,b)=>a.mes.localeCompare(b.mes));
+        const prevPoint = sorted.slice().reverse().find(d => d.mes < desdeStr);
+        if (prevPoint && !filtered.find(d=>d.mes===prevPoint.mes)) {
+            return [prevPoint, ...filtered].sort((a,b)=>a.mes.localeCompare(b.mes));
+        }
+    }
+    return filtered.length >= 1 ? filtered : allData;
 }
 
 function calcularVariacion(filteredData, allData) {
@@ -2201,7 +2208,7 @@ function totalActualUSD() {
 function guardarBufferVivo() {
     const total=totalActualUSD();
     if (total===0) return;
-    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total, detalle: snapshotDetalle() }));
+    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total, detalle: snapshotDetalle(), tc: parseFloat(document.getElementById('tc').value)||18 }));
 }
 function autoFreezeAlCambiarMes() {
     const bufferRaw=localStorage.getItem('pc_live_buffer');
@@ -2215,15 +2222,21 @@ function autoFreezeAlCambiarMes() {
             // También guardar versión completa del portfolio si la tenemos en el buffer
             if (!window.versionesPortfolio) window.versionesPortfolio = [];
             const yaExisteVersion = window.versionesPortfolio.find(v=>v.mes===buffer.mes);
-            if (!yaExisteVersion && (portafolioMXN.some(i=>i.v>0) || portafolioUSD.some(i=>i.v>0))) {
-                window.versionesPortfolio.push({
-                    mes: buffer.mes,
-                    total: buffer.total,
-                    tc: parseFloat(document.getElementById('tc').value)||18,
-                    mxn: JSON.parse(JSON.stringify(portafolioMXN)),
-                    usd: JSON.parse(JSON.stringify(portafolioUSD))
-                });
-                if (window.versionesPortfolio.length > 24) window.versionesPortfolio.shift();
+            if (!yaExisteVersion) {
+                // Usar detalle del buffer (valores reales de ese mes), no los valores actuales
+                const mxnSnap = buffer.detalle?.mxn_full || (buffer.detalle ? portafolioMXN.map(it=>({...it, v: buffer.detalle.mxn?.[it.id]||it.v})) : portafolioMXN);
+                const usdSnap = buffer.detalle?.usd_full || (buffer.detalle ? portafolioUSD.map(it=>({...it, v: buffer.detalle.usd?.[it.id]||it.v})) : portafolioUSD);
+                const hasData = mxnSnap.some(i=>i.v>0) || usdSnap.some(i=>i.v>0);
+                if (hasData) {
+                    window.versionesPortfolio.push({
+                        mes: buffer.mes,
+                        total: buffer.total,
+                        tc: buffer.tc || (parseFloat(document.getElementById('tc').value)||18),
+                        mxn: JSON.parse(JSON.stringify(mxnSnap)),
+                        usd: JSON.parse(JSON.stringify(usdSnap))
+                    });
+                    if (window.versionesPortfolio.length > 24) window.versionesPortfolio.shift();
+                }
             }
             planearSincronizacion();
         }
