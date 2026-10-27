@@ -52,8 +52,8 @@
         .dot { width:6px; height:6px; border-radius:50%; background:#2a2a2a; cursor:pointer; transition:background .2s, width .2s; }
         .dot.active { background:var(--gold-mid); width:18px; border-radius:3px; }
         .pages-viewport { overflow:hidden; }
-        .pages-track { display:flex; width:200%; transition: transform 0.35s cubic-bezier(.4,0,.2,1); }
-        .page-slide { width:50%; flex-shrink:0; min-width:0; }
+        .pages-track { display:flex; width:300%; transition: transform 0.35s cubic-bezier(.4,0,.2,1); }
+        .page-slide { width:33.333%; flex-shrink:0; min-width:0; }
 
         /* ── Cards ── */
         .grid-sum { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.9rem; margin-bottom:1.75rem; }
@@ -424,6 +424,7 @@
 <div class="pager-dots">
     <span class="dot active" data-i="0" onclick="goToPage(0)"></span>
     <span class="dot" data-i="1" onclick="goToPage(1)"></span>
+    <span class="dot" data-i="2" onclick="goToPage(2)"></span>
 </div>
 
 <div class="pages-viewport" id="pages-viewport">
@@ -702,9 +703,9 @@ function chartTheme() {
 let currentPage = 0;
 function goToPage(i) {
     currentPage = i;
-    document.getElementById('pages-track').style.transform = `translateX(-${i*50}%)`;
+    document.getElementById('pages-track').style.transform = `translateX(-${i*33.333}%)`;
     document.querySelectorAll('.dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
-    if (i===1) { renderFI(); renderRetiroChart(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); renderCategoryEvolution(); }
+    if (i===1) { renderFI(); renderRetiroChart(); renderDonuts(); renderProyeccion(); renderMeta(); renderRanking(); renderCategoryEvolution(); } if (i===2) { renderCompensacion(); }
 }
 (function initSwipe() {
     const vp = document.getElementById('pages-viewport');
@@ -718,8 +719,8 @@ function goToPage(i) {
         const dx = e.changedTouches[0].clientX - sx;
         const dy = e.changedTouches[0].clientY - sy;
         if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)*1.4) {
-            if (dx < 0 && currentPage===0) goToPage(1);
-            else if (dx > 0 && currentPage===1) goToPage(0);
+            if (dx < 0 && currentPage < 2) goToPage(currentPage+1);
+            else if (dx > 0 && currentPage > 0) goToPage(currentPage-1);
         }
     }, {passive:true});
 })();
@@ -2208,7 +2209,17 @@ function totalActualUSD() {
 function guardarBufferVivo() {
     const total=totalActualUSD();
     if (total===0) return;
-    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes: mesActual(), total, detalle: snapshotDetalle(), tc: parseFloat(document.getElementById('tc').value)||18 }));
+    const tc=parseFloat(document.getElementById('tc').value)||18;
+    const mes=mesActual();
+    localStorage.setItem('pc_live_buffer', JSON.stringify({ mes, total, detalle: snapshotDetalle(), tc }));
+    // Siempre mantener versión viva del mes actual en versionesPortfolio
+    if (!window.versionesPortfolio) window.versionesPortfolio=[];
+    const idx=window.versionesPortfolio.findIndex(v=>v.mes===mes);
+    const version={mes,total,tc,mxn:JSON.parse(JSON.stringify(portafolioMXN)),usd:JSON.parse(JSON.stringify(portafolioUSD)),live:true};
+    if(idx>=0) window.versionesPortfolio[idx]=version;
+    else window.versionesPortfolio.push(version);
+    window.versionesPortfolio.sort((a,b)=>a.mes.localeCompare(b.mes));
+    if(window.versionesPortfolio.length>24) window.versionesPortfolio.shift();
 }
 function autoFreezeAlCambiarMes() {
     const bufferRaw=localStorage.getItem('pc_live_buffer');
@@ -2495,11 +2506,110 @@ window.onload = function() {
                 mostrarSplash();
             }, 600);
         });
-    cargarConfigAlertas();
+    cargarConfigAlertas(); cargarCompensacion();
     attachChartTooltip('evolucion-chart','chart-container', () => chartDataMain);
     attachChartTooltip('proyeccion-chart','proyeccion-container', () => chartDataProy);
     window.addEventListener('resize', () => { renderChart(); renderProyeccion(); renderRetiroChart(); renderCategoryEvolution(); });
 };
+
+// ── Compensación Total ────────────────────────────────────────────────────
+let compData = {};
+
+function parseCurrencyInput(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    return parseFloat(el.value.replace(/[^0-9.]/g,'')) || 0;
+}
+
+function calcularCompensacion() {
+    const tc = (ultimoCalculo && ultimoCalculo.tc) ? ultimoCalculo.tc : (parseFloat(document.getElementById('tc').value)||18);
+    
+    const sueldoMensual = parseCurrencyInput('c-sueldo-neto');
+    const quincenas = parseFloat(document.getElementById('c-quincenas')?.value) || 26;
+    const aguinaldoDias = parseFloat(document.getElementById('c-aguinaldo')?.value) || 30;
+    const vacPct = parseFloat(document.getElementById('c-vacaciones-pct')?.value) || 25;
+    const vacDias = parseFloat(document.getElementById('c-vacaciones-dias')?.value) || 12;
+    
+    const sueldoDiario = sueldoMensual / 30;
+    const sueldoAnual = sueldoDiario * (quincenas * 15);
+    const aguinaldo = sueldoDiario * aguinaldoDias;
+    const primaVac = sueldoDiario * vacDias * (vacPct/100);
+    const totalSueldo = sueldoAnual + aguinaldo + primaVac;
+
+    const espp = parseCurrencyInput('c-espp');
+    const bono = parseCurrencyInput('c-bono');
+    const rsu  = parseCurrencyInput('c-rsu');
+    const totalStocks = espp + bono + rsu;
+
+    const auto      = parseCurrencyInput('c-auto') * 12;
+    const despensa  = parseCurrencyInput('c-despensa') * 12;
+    const seguro    = parseCurrencyInput('c-seguro') * 12;
+    const otros     = parseCurrencyInput('c-otros') * 12;
+    const totalBeneficios = auto + despensa + seguro + otros;
+
+    const faEmpresa  = parseCurrencyInput('c-fa-empresa') * 12;
+    const faEmpleado = parseCurrencyInput('c-fa-empleado') * 12;
+    const pension    = parseCurrencyInput('c-pension') * 12;
+    const infonavit  = parseCurrencyInput('c-infonavit') * 12;
+    const totalAhorro = faEmpresa + faEmpleado + pension + infonavit;
+
+    const totalAnual = totalSueldo + totalStocks + totalBeneficios + totalAhorro;
+    const mensualProm = totalAnual / 12;
+
+    const fmt = v => '$ ' + Math.round(v).toLocaleString('en-US');
+
+    const el = id => document.getElementById(id);
+    if (el('comp-total-anual'))       el('comp-total-anual').innerText       = fmt(totalAnual) + ' MXN';
+    if (el('comp-total-anual-usd'))   el('comp-total-anual-usd').innerText   = '≈ $ ' + Math.round(totalAnual/tc).toLocaleString('en-US') + ' USD';
+    if (el('comp-total-mensual'))     el('comp-total-mensual').innerText     = fmt(mensualProm) + ' MXN';
+    if (el('comp-total-mensual-usd')) el('comp-total-mensual-usd').innerText = '≈ $ ' + Math.round(mensualProm/tc).toLocaleString('en-US') + ' USD';
+    if (el('comp-sub-sueldo'))        el('comp-sub-sueldo').innerText        = fmt(totalSueldo) + ' MXN/año';
+    if (el('comp-sub-stocks'))        el('comp-sub-stocks').innerText        = fmt(totalStocks) + ' MXN/año';
+    if (el('comp-sub-beneficios'))    el('comp-sub-beneficios').innerText    = fmt(totalBeneficios) + ' MXN/año';
+    if (el('comp-sub-ahorro'))        el('comp-sub-ahorro').innerText        = fmt(totalAhorro) + ' MXN/año';
+
+    // Breakdown bars
+    const breakdown = el('comp-breakdown');
+    const box = el('comp-breakdown-box');
+    if (breakdown && totalAnual > 0) {
+        box.style.display = 'block';
+        const cats = [
+            { label:'💵 Sueldo + prestaciones', val:totalSueldo, color:'#e5c158' },
+            { label:'📈 Stock & Bonos',          val:totalStocks,    color:'#22c55e' },
+            { label:'🎁 Beneficios',              val:totalBeneficios,color:'#60a5fa' },
+            { label:'🏦 Ahorro & Retiro',         val:totalAhorro,    color:'#a855f7' }
+        ].filter(c=>c.val>0);
+        breakdown.innerHTML = cats.map(c => {
+            const pct = (c.val/totalAnual*100).toFixed(1);
+            return `<div style="margin-bottom:0.7rem;">
+                <div style="display:flex;justify-content:space-between;font-size:0.68rem;margin-bottom:0.25rem;">
+                    <span style="color:#999;">${c.label}</span>
+                    <span style="color:#e5c158;font-family:monospace;font-weight:700;">${fmt(c.val)} <span style="color:#555;">(${pct}%)</span></span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c.color};"></div></div>
+            </div>`;
+        }).join('');
+    }
+
+    // Save to localStorage
+    compData = { sueldoMensual, quincenas, aguinaldoDias, vacPct, vacDias, espp, bono, rsu, auto:parseCurrencyInput('c-auto'), despensa:parseCurrencyInput('c-despensa'), seguro:parseCurrencyInput('c-seguro'), otros:parseCurrencyInput('c-otros'), faEmpresa:parseCurrencyInput('c-fa-empresa'), faEmpleado:parseCurrencyInput('c-fa-empleado'), pension:parseCurrencyInput('c-pension'), infonavit:parseCurrencyInput('c-infonavit') };
+    localStorage.setItem('pc_comp', JSON.stringify(compData));
+}
+
+function cargarCompensacion() {
+    try {
+        const raw = localStorage.getItem('pc_comp');
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        const map = { 'c-sueldo-neto':d.sueldoMensual,'c-quincenas':d.quincenas,'c-aguinaldo':d.aguinaldoDias,'c-vacaciones-pct':d.vacPct,'c-vacaciones-dias':d.vacDias,'c-espp':d.espp,'c-bono':d.bono,'c-rsu':d.rsu,'c-auto':d.auto,'c-despensa':d.despensa,'c-seguro':d.seguro,'c-otros':d.otros,'c-fa-empresa':d.faEmpresa,'c-fa-empleado':d.faEmpleado,'c-pension':d.pension,'c-infonavit':d.infonavit };
+        Object.entries(map).forEach(([id,val])=>{ const el=document.getElementById(id); if(el&&val) el.value=val>0?Math.round(val).toLocaleString('en-US'):''; });
+    } catch(e) {}
+}
+
+function renderCompensacion() {
+    cargarCompensacion();
+    calcularCompensacion();
+}
 </script>
 </body>
 </html>
